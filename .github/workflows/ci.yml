@@ -1,0 +1,84 @@
+# Runs at the root of the public mirror repo (peppol-sh/peppol-sh-cli) after the
+# subtree split. Inert inside the monorepo, which has its own job for this
+# package (test-cli in the root .github/workflows/ci.yml).
+#
+# The drift test (internal/api/client.gen.go against the OpenAPI spec) and the
+# contract test (each command against its operation in the spec) skip here:
+# the spec exists only in the monorepo, where CI requires both.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      # .gitattributes forces LF in this repo; this also covers a checkout
+      # before that file applies.
+      - if: ${{ runner.os == 'Windows' }}
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: go test ./...
+
+      # install.ps1 must parse in Windows PowerShell 5.1, not only in pwsh.
+      - if: ${{ runner.os == 'Windows' }}
+        name: Parse install.ps1 with Windows PowerShell
+        shell: powershell
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$PWD\install.ps1", [ref]$null, [ref]$errors) | Out-Null
+          if ($errors) { $errors | ForEach-Object { Write-Error $_.ToString() }; exit 1 }
+
+  # Static checks, once, on Linux.
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::Not gofmt-formatted (run gofmt -w .):"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go mod tidy
+        run: go mod tidy -diff
+
+      - name: go vet
+        run: go vet ./...
+
+      # shellcheck is on the ubuntu runner image.
+      - name: shellcheck
+        run: shellcheck install.sh
+
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          # Same pinned version as release.yml.
+          version: v2.18.3
+          args: check

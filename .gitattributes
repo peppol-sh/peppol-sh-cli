@@ -1,0 +1,5 @@
+# LF everywhere, also in a Windows checkout: the drift test compares the
+# generated client byte for byte, and install.sh must run under sh.
+* text=auto eol=lf
+
+/internal/api/client.gen.go linguist-generated=true

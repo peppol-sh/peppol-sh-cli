@@ -1,0 +1,8 @@
+# GoReleaser output
+/dist/
+# `go build` output
+/peppol-sh
+/peppol-sh.exe
+# `go test -coverprofile`
+*.out
+coverage.*

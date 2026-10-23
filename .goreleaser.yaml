@@ -1,0 +1,102 @@
+# GoReleaser OSS config of the peppol.sh CLI. Runs at the root of the public
+# mirror repo (peppol-sh/peppol-sh-cli), started by a `vX.Y.Z` tag
+# (.github/workflows/release.yml). Monorepo CI runs `check` and
+# `build --snapshot` on it, with no secrets.
+#
+# No `before` hook (no `go mod tidy`, no `go generate`): the release builds the
+# committed tree. CI fails when go.mod or the generated client is stale.
+version: 2
+
+project_name: peppol-sh
+
+builds:
+  - id: peppol-sh
+    main: .
+    binary: peppol-sh
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/peppol-sh/peppol-sh-cli/internal/version.Version={{ .Version }}
+    # Reproducible: the file times come from the commit, not the build clock.
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: peppol-sh
+    ids: [peppol-sh]
+    # No version in the name: install.sh and install.ps1 download
+    # releases/latest/download/<name>.
+    name_template: "peppol-sh_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+sboms:
+  - artifacts: archive
+
+notarize:
+  macos:
+    - ids: [peppol-sh]
+      # Every release is notarized: release.yml fails before this step when a
+      # secret is missing. The condition only lets `check` and
+      # `build --snapshot` run without secrets.
+      enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+      sign:
+        certificate: "{{ .Env.MACOS_SIGN_P12 }}"
+        password: "{{ .Env.MACOS_SIGN_PASSWORD }}"
+      notarize:
+        issuer_id: "{{ .Env.MACOS_NOTARY_ISSUER_ID }}"
+        key_id: "{{ .Env.MACOS_NOTARY_KEY_ID }}"
+        key: "{{ .Env.MACOS_NOTARY_KEY }}"
+        wait: true
+        timeout: 20m
+
+homebrew_casks:
+  - name: peppol-sh
+    ids: [peppol-sh]
+    binaries: [peppol-sh]
+    homepage: https://peppol.sh
+    description: Command-line client for the peppol.sh Peppol e-invoicing API
+    # Homebrew runs `peppol-sh completion <shell>` at install time, so the
+    # archives carry no completion files.
+    generate_completions_from_executable:
+      shell_parameter_format: cobra
+      shells: [bash, zsh, fish]
+    # No quarantine-removal hook: the macOS binaries are signed and notarized.
+    # `auto`: a pre-release tag (v1.2.0-rc.1) does not replace the cask that
+    # `brew install` serves.
+    skip_upload: auto
+    commit_author:
+      name: github-actions[bot]
+      email: 41898282+github-actions[bot]@users.noreply.github.com
+    commit_msg_template: "peppol-sh {{ .Tag }}"
+    repository:
+      owner: peppol-sh
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+
+release:
+  github:
+    owner: peppol-sh
+    name: peppol-sh-cli
+  prerelease: auto
+
+# The release notes are the CHANGELOG.md section of the version
+# (release.yml passes them with --release-notes).
+changelog:
+  disable: true
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
