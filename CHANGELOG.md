@@ -33,4 +33,5 @@ First version. Date this heading to release it; the mirror workflow then tags
 - Install channels: the Homebrew tap (`brew install peppol-sh/tap/peppol-sh`),
   the install scripts `install.sh` and `install.ps1`, and the archives on
   GitHub Releases with `checksums.txt`, SBOMs and artifact attestations. The
-  macOS binaries are signed and notarized.
+  macOS binaries are not signed or notarized; the cask removes the quarantine
+  attribute.

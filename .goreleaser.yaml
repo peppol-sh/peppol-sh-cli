@@ -46,23 +46,6 @@ checksum:
 sboms:
   - artifacts: archive
 
-notarize:
-  macos:
-    - ids: [peppol-sh]
-      # Every release is notarized: release.yml fails before this step when a
-      # secret is missing. The condition only lets `check` and
-      # `build --snapshot` run without secrets.
-      enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
-      sign:
-        certificate: "{{ .Env.MACOS_SIGN_P12 }}"
-        password: "{{ .Env.MACOS_SIGN_PASSWORD }}"
-      notarize:
-        issuer_id: "{{ .Env.MACOS_NOTARY_ISSUER_ID }}"
-        key_id: "{{ .Env.MACOS_NOTARY_KEY_ID }}"
-        key: "{{ .Env.MACOS_NOTARY_KEY }}"
-        wait: true
-        timeout: 20m
-
 homebrew_casks:
   - name: peppol-sh
     ids: [peppol-sh]
@@ -74,7 +57,16 @@ homebrew_casks:
     generate_completions_from_executable:
       shell_parameter_format: cobra
       shells: [bash, zsh, fish]
-    # No quarantine-removal hook: the macOS binaries are signed and notarized.
+    # The macOS binaries are not signed or notarized (ADR-0030, amendment).
+    # Homebrew sets the quarantine attribute on a cask download, and
+    # Gatekeeper then refuses to run the binary. The hook removes it before
+    # Homebrew runs the binary for the shell completions.
+    hooks:
+      pre:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/peppol-sh"]
+          end
     # `auto`: a pre-release tag (v1.2.0-rc.1) does not replace the cask that
     # `brew install` serves.
     skip_upload: auto

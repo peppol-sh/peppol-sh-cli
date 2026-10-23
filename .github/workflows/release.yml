@@ -4,21 +4,17 @@
 # `vX.Y.Z` tag when internal/version/version.go has a version with a dated
 # CHANGELOG.md heading.
 #
-# GoReleaser (.goreleaser.yaml) builds 6 binaries, signs and notarizes the
-# macOS ones, uploads the archives, checksums.txt and SBOMs to the GitHub
-# Release, and pushes the cask to peppol-sh/homebrew-tap. This workflow then
-# attests the provenance of every archive.
+# GoReleaser (.goreleaser.yaml) builds 6 binaries, uploads the archives,
+# checksums.txt and SBOMs to the GitHub Release, and pushes the cask to
+# peppol-sh/homebrew-tap. The macOS binaries are not signed or notarized
+# (ADR-0030, amendment). This workflow then attests the provenance of every
+# archive.
 #
 # One-time setup (a human does this, once; details in
 # docs/runbooks/cli-release.md of the monorepo): create the repos
-# peppol-sh/peppol-sh-cli and peppol-sh/homebrew-tap, and add these Actions
-# secrets to peppol-sh/peppol-sh-cli:
+# peppol-sh/peppol-sh-cli and peppol-sh/homebrew-tap, and add this Actions
+# secret to peppol-sh/peppol-sh-cli:
 #   HOMEBREW_TAP_TOKEN       fine-grained PAT, contents:write on peppol-sh/homebrew-tap
-#   MACOS_SIGN_P12           base64 of the "Developer ID Application" .p12
-#   MACOS_SIGN_PASSWORD      password of that .p12
-#   MACOS_NOTARY_KEY         base64 of the App Store Connect API key (.p8)
-#   MACOS_NOTARY_KEY_ID      ID of that key
-#   MACOS_NOTARY_ISSUER_ID   issuer UUID of that key
 name: Release
 
 on:
@@ -33,8 +29,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    # Notarization waits up to 20 minutes for Apple (.goreleaser.yaml).
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -57,27 +52,16 @@ jobs:
             exit 1
           fi
 
-      # Every release is signed, notarized and in the tap. Without this check,
-      # GoReleaser skips notarization when MACOS_SIGN_P12 is empty.
-      - name: Check that the release secrets are set
+      # Every release is in the tap. Without this check, GoReleaser fails only
+      # after the GitHub Release exists.
+      - name: Check that the release secret is set
         run: |
-          missing=""
-          for name in HOMEBREW_TAP_TOKEN MACOS_SIGN_P12 MACOS_SIGN_PASSWORD MACOS_NOTARY_KEY MACOS_NOTARY_KEY_ID MACOS_NOTARY_ISSUER_ID; do
-            if [ -z "${!name}" ]; then
-              missing="$missing $name"
-            fi
-          done
-          if [ -n "$missing" ]; then
-            echo "::error::Missing repository secrets:$missing"
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "::error::Missing repository secret: HOMEBREW_TAP_TOKEN"
             exit 1
           fi
         env:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
-          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
-          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
-          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
-          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
 
       - name: Test
         run: go test ./...
@@ -119,11 +103,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
-          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
-          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
-          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
-          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
 
       # `gh attestation verify <archive> --repo peppol-sh/peppol-sh-cli`
       # checks an archive against this attestation.

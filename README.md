@@ -19,7 +19,6 @@ from the same OpenAPI contract as the API.
 brew install peppol-sh/tap/peppol-sh
 ```
 
-The macOS binaries are signed with an Apple Developer ID and notarized.
 Homebrew also installs the shell completion for bash, zsh and fish.
 
 ### Install script (Linux, macOS)
@@ -57,6 +56,15 @@ Download the archive for your platform from
 `peppol-sh_<os>_<arch>.tar.gz` (`peppol-sh_windows_<arch>.zip` on Windows),
 with `<os>` one of `linux`, `darwin`, `windows` and `<arch>` one of `amd64`,
 `arm64`. Check it, unpack it, and put `peppol-sh` on your `PATH`.
+
+The macOS binaries are not signed with an Apple Developer ID. Homebrew and the
+install script need no extra step. A binary that you download with a browser
+gets the quarantine attribute, and macOS refuses to open it; remove the
+attribute once:
+
+```bash
+xattr -d com.apple.quarantine ./peppol-sh
+```
 
 ```bash
 sha256sum --ignore-missing -c checksums.txt          # macOS: shasum -a 256 --ignore-missing -c checksums.txt
