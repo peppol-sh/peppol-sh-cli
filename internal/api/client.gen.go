@@ -1106,10 +1106,15 @@ type CompanyCreate struct {
 	// identifier is 10 digits (`0208:0410086603`, not
 	// `0208:0410.086.603`) and a `9925` identifier is `BE` plus those
 	// digits. The scheme must belong to `country` or be
-	// international (`peppol_id_country_mismatch`).
+	// international (`peppol_id_country_mismatch`). An EU VAT scheme
+	// (`99xx`) takes the VAT number with its country prefix
+	// (`9930:DE123456788`; Greece `9933` without `EL`), and it must be
+	// the VAT number in `tax_id` when `tax_id` is one
+	// (`peppol_id_tax_id_mismatch`).
 	PeppolId *string `json:"peppol_id,omitempty"`
 
-	// TaxId VAT number (e.g., `BE0123456749`). Optional.
+	// TaxId VAT number (e.g., `BE0123456749`). Optional. A Peppol ID in the VAT
+	// scheme of the country must be this VAT number.
 	TaxId *string `json:"tax_id,omitempty"`
 }
 
@@ -1195,8 +1200,8 @@ type CompanyUpdate struct {
 	// provisioned, a change is pushed to that tenant BEFORE it is stored,
 	// so the tenant always owns the Peppol ID it sends from. It is checked
 	// as on create (characters, format, check digit), against the company
-	// country after the update: `invalid_peppol_id` or
-	// `peppol_id_country_mismatch`. A provider
+	// country and `tax_id` after the update: `invalid_peppol_id`,
+	// `peppol_id_country_mismatch` or `peppol_id_tax_id_mismatch`. A provider
 	// failure on the push returns `502 provider_update_failed` and leaves
 	// the value unchanged.
 	PeppolId *string `json:"peppol_id,omitempty"`
@@ -1544,6 +1549,7 @@ type DocumentStatus string
 // | validation_error | `invalid_peppol_id` | Peppol participant ID has an invalid format, check digit or scheme. |
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
+// | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2403,6 +2409,7 @@ type IdempotencyKey = string
 // | validation_error | `invalid_peppol_id` | Peppol participant ID has an invalid format, check digit or scheme. |
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
+// | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2475,6 +2482,7 @@ type BadRequest = ErrorObject
 // | validation_error | `invalid_peppol_id` | Peppol participant ID has an invalid format, check digit or scheme. |
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
+// | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2547,6 +2555,7 @@ type Forbidden = ErrorObject
 // | validation_error | `invalid_peppol_id` | Peppol participant ID has an invalid format, check digit or scheme. |
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
+// | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2619,6 +2628,7 @@ type NotFound = ErrorObject
 // | validation_error | `invalid_peppol_id` | Peppol participant ID has an invalid format, check digit or scheme. |
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
+// | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2691,6 +2701,7 @@ type PaymentRequired = ErrorObject
 // | validation_error | `invalid_peppol_id` | Peppol participant ID has an invalid format, check digit or scheme. |
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
+// | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2763,6 +2774,7 @@ type RateLimited = ErrorObject
 // | validation_error | `invalid_peppol_id` | Peppol participant ID has an invalid format, check digit or scheme. |
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
+// | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2835,6 +2847,7 @@ type Unauthenticated = ErrorObject
 // | validation_error | `invalid_peppol_id` | Peppol participant ID has an invalid format, check digit or scheme. |
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
+// | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2907,6 +2920,7 @@ type Unauthorized = ErrorObject
 // | validation_error | `invalid_peppol_id` | Peppol participant ID has an invalid format, check digit or scheme. |
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
+// | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3761,6 +3775,19 @@ type ClientInterface interface {
 	// `invalid_peppol_id`, and the message names the clean value
 	// (`Use 0208:0410086603.`).
 	//
+	// **VAT schemes.** An EU VAT scheme (`99xx`) takes the VAT number with
+	// its country prefix, in the national format, with its check digit where
+	// the country publishes one: `9930:DE123456788`, `9914:ATU12345675`,
+	// `9944:NL123456782B01`, `9957:FR11123456782`. Greece (`9933`) is the
+	// exception: the 9-digit TIN without `EL` (`9933:123456783`, Peppol BIS
+	// rule GR-R-009). A register number in a VAT scheme fails with
+	// `invalid_peppol_id` and a message that says so: `9930:DEHRB135199B` is
+	// a German register number, not a VAT number. When `tax_id` is a valid
+	// VAT number of the scheme, the Peppol ID must be that VAT number
+	// (`peppol_id_tax_id_mismatch`); the message names the Peppol ID to use
+	// (`Use 9930:DE240712418.`). A `tax_id` of another kind, such as a
+	// German tax number, is not compared.
+	//
 	// **Auto-provisioning.** In a workspace whose KYC status is already
 	// `approved`, creating a company **auto-provisions** its e-invoice.be
 	// provider tenant so it can go live immediately (`is_live: true`). This is
@@ -3805,6 +3832,19 @@ type ClientInterface interface {
 	// never removed for you: `0208:0410.086.603` fails with
 	// `invalid_peppol_id`, and the message names the clean value
 	// (`Use 0208:0410086603.`).
+	//
+	// **VAT schemes.** An EU VAT scheme (`99xx`) takes the VAT number with
+	// its country prefix, in the national format, with its check digit where
+	// the country publishes one: `9930:DE123456788`, `9914:ATU12345675`,
+	// `9944:NL123456782B01`, `9957:FR11123456782`. Greece (`9933`) is the
+	// exception: the 9-digit TIN without `EL` (`9933:123456783`, Peppol BIS
+	// rule GR-R-009). A register number in a VAT scheme fails with
+	// `invalid_peppol_id` and a message that says so: `9930:DEHRB135199B` is
+	// a German register number, not a VAT number. When `tax_id` is a valid
+	// VAT number of the scheme, the Peppol ID must be that VAT number
+	// (`peppol_id_tax_id_mismatch`); the message names the Peppol ID to use
+	// (`Use 9930:DE240712418.`). A `tax_id` of another kind, such as a
+	// German tax number, is not compared.
 	//
 	// **Auto-provisioning.** In a workspace whose KYC status is already
 	// `approved`, creating a company **auto-provisions** its e-invoice.be
@@ -4698,6 +4738,19 @@ func (c *Client) ListCompanies(ctx context.Context, reqEditors ...RequestEditorF
 // `invalid_peppol_id`, and the message names the clean value
 // (`Use 0208:0410086603.`).
 //
+// **VAT schemes.** An EU VAT scheme (`99xx`) takes the VAT number with
+// its country prefix, in the national format, with its check digit where
+// the country publishes one: `9930:DE123456788`, `9914:ATU12345675`,
+// `9944:NL123456782B01`, `9957:FR11123456782`. Greece (`9933`) is the
+// exception: the 9-digit TIN without `EL` (`9933:123456783`, Peppol BIS
+// rule GR-R-009). A register number in a VAT scheme fails with
+// `invalid_peppol_id` and a message that says so: `9930:DEHRB135199B` is
+// a German register number, not a VAT number. When `tax_id` is a valid
+// VAT number of the scheme, the Peppol ID must be that VAT number
+// (`peppol_id_tax_id_mismatch`); the message names the Peppol ID to use
+// (`Use 9930:DE240712418.`). A `tax_id` of another kind, such as a
+// German tax number, is not compared.
+//
 // **Auto-provisioning.** In a workspace whose KYC status is already
 // `approved`, creating a company **auto-provisions** its e-invoice.be
 // provider tenant so it can go live immediately (`is_live: true`). This is
@@ -4752,6 +4805,19 @@ func (c *Client) CreateCompanyWithBody(ctx context.Context, contentType string, 
 // never removed for you: `0208:0410.086.603` fails with
 // `invalid_peppol_id`, and the message names the clean value
 // (`Use 0208:0410086603.`).
+//
+// **VAT schemes.** An EU VAT scheme (`99xx`) takes the VAT number with
+// its country prefix, in the national format, with its check digit where
+// the country publishes one: `9930:DE123456788`, `9914:ATU12345675`,
+// `9944:NL123456782B01`, `9957:FR11123456782`. Greece (`9933`) is the
+// exception: the 9-digit TIN without `EL` (`9933:123456783`, Peppol BIS
+// rule GR-R-009). A register number in a VAT scheme fails with
+// `invalid_peppol_id` and a message that says so: `9930:DEHRB135199B` is
+// a German register number, not a VAT number. When `tax_id` is a valid
+// VAT number of the scheme, the Peppol ID must be that VAT number
+// (`peppol_id_tax_id_mismatch`); the message names the Peppol ID to use
+// (`Use 9930:DE240712418.`). A `tax_id` of another kind, such as a
+// German tax number, is not compared.
 //
 // **Auto-provisioning.** In a workspace whose KYC status is already
 // `approved`, creating a company **auto-provisions** its e-invoice.be
@@ -8179,6 +8245,19 @@ type ClientWithResponsesInterface interface {
 	// `invalid_peppol_id`, and the message names the clean value
 	// (`Use 0208:0410086603.`).
 	//
+	// **VAT schemes.** An EU VAT scheme (`99xx`) takes the VAT number with
+	// its country prefix, in the national format, with its check digit where
+	// the country publishes one: `9930:DE123456788`, `9914:ATU12345675`,
+	// `9944:NL123456782B01`, `9957:FR11123456782`. Greece (`9933`) is the
+	// exception: the 9-digit TIN without `EL` (`9933:123456783`, Peppol BIS
+	// rule GR-R-009). A register number in a VAT scheme fails with
+	// `invalid_peppol_id` and a message that says so: `9930:DEHRB135199B` is
+	// a German register number, not a VAT number. When `tax_id` is a valid
+	// VAT number of the scheme, the Peppol ID must be that VAT number
+	// (`peppol_id_tax_id_mismatch`); the message names the Peppol ID to use
+	// (`Use 9930:DE240712418.`). A `tax_id` of another kind, such as a
+	// German tax number, is not compared.
+	//
 	// **Auto-provisioning.** In a workspace whose KYC status is already
 	// `approved`, creating a company **auto-provisions** its e-invoice.be
 	// provider tenant so it can go live immediately (`is_live: true`). This is
@@ -8223,6 +8302,19 @@ type ClientWithResponsesInterface interface {
 	// never removed for you: `0208:0410.086.603` fails with
 	// `invalid_peppol_id`, and the message names the clean value
 	// (`Use 0208:0410086603.`).
+	//
+	// **VAT schemes.** An EU VAT scheme (`99xx`) takes the VAT number with
+	// its country prefix, in the national format, with its check digit where
+	// the country publishes one: `9930:DE123456788`, `9914:ATU12345675`,
+	// `9944:NL123456782B01`, `9957:FR11123456782`. Greece (`9933`) is the
+	// exception: the 9-digit TIN without `EL` (`9933:123456783`, Peppol BIS
+	// rule GR-R-009). A register number in a VAT scheme fails with
+	// `invalid_peppol_id` and a message that says so: `9930:DEHRB135199B` is
+	// a German register number, not a VAT number. When `tax_id` is a valid
+	// VAT number of the scheme, the Peppol ID must be that VAT number
+	// (`peppol_id_tax_id_mismatch`); the message names the Peppol ID to use
+	// (`Use 9930:DE240712418.`). A `tax_id` of another kind, such as a
+	// German tax number, is not compared.
 	//
 	// **Auto-provisioning.** In a workspace whose KYC status is already
 	// `approved`, creating a company **auto-provisions** its e-invoice.be
@@ -12169,6 +12261,19 @@ func (c *ClientWithResponses) ListCompaniesWithResponse(ctx context.Context, req
 // `invalid_peppol_id`, and the message names the clean value
 // (`Use 0208:0410086603.`).
 //
+// **VAT schemes.** An EU VAT scheme (`99xx`) takes the VAT number with
+// its country prefix, in the national format, with its check digit where
+// the country publishes one: `9930:DE123456788`, `9914:ATU12345675`,
+// `9944:NL123456782B01`, `9957:FR11123456782`. Greece (`9933`) is the
+// exception: the 9-digit TIN without `EL` (`9933:123456783`, Peppol BIS
+// rule GR-R-009). A register number in a VAT scheme fails with
+// `invalid_peppol_id` and a message that says so: `9930:DEHRB135199B` is
+// a German register number, not a VAT number. When `tax_id` is a valid
+// VAT number of the scheme, the Peppol ID must be that VAT number
+// (`peppol_id_tax_id_mismatch`); the message names the Peppol ID to use
+// (`Use 9930:DE240712418.`). A `tax_id` of another kind, such as a
+// German tax number, is not compared.
+//
 // **Auto-provisioning.** In a workspace whose KYC status is already
 // `approved`, creating a company **auto-provisions** its e-invoice.be
 // provider tenant so it can go live immediately (`is_live: true`). This is
@@ -12219,6 +12324,19 @@ func (c *ClientWithResponses) CreateCompanyWithBodyWithResponse(ctx context.Cont
 // never removed for you: `0208:0410.086.603` fails with
 // `invalid_peppol_id`, and the message names the clean value
 // (`Use 0208:0410086603.`).
+//
+// **VAT schemes.** An EU VAT scheme (`99xx`) takes the VAT number with
+// its country prefix, in the national format, with its check digit where
+// the country publishes one: `9930:DE123456788`, `9914:ATU12345675`,
+// `9944:NL123456782B01`, `9957:FR11123456782`. Greece (`9933`) is the
+// exception: the 9-digit TIN without `EL` (`9933:123456783`, Peppol BIS
+// rule GR-R-009). A register number in a VAT scheme fails with
+// `invalid_peppol_id` and a message that says so: `9930:DEHRB135199B` is
+// a German register number, not a VAT number. When `tax_id` is a valid
+// VAT number of the scheme, the Peppol ID must be that VAT number
+// (`peppol_id_tax_id_mismatch`); the message names the Peppol ID to use
+// (`Use 9930:DE240712418.`). A `tax_id` of another kind, such as a
+// German tax number, is not compared.
 //
 // **Auto-provisioning.** In a workspace whose KYC status is already
 // `approved`, creating a company **auto-provisions** its e-invoice.be
