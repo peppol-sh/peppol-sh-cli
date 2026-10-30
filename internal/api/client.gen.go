@@ -490,24 +490,48 @@ func (e KycStateStatus) Valid() bool {
 	}
 }
 
+// Defines values for PaymentAccountType.
+const (
+	PaymentAccountTypeBankgiro PaymentAccountType = "bankgiro"
+	PaymentAccountTypeIban     PaymentAccountType = "iban"
+	PaymentAccountTypeOther    PaymentAccountType = "other"
+	PaymentAccountTypePlusgiro PaymentAccountType = "plusgiro"
+)
+
+// Valid indicates whether the value is a known member of the PaymentAccountType enum.
+func (e PaymentAccountType) Valid() bool {
+	switch e {
+	case PaymentAccountTypeBankgiro:
+		return true
+	case PaymentAccountTypeIban:
+		return true
+	case PaymentAccountTypeOther:
+		return true
+	case PaymentAccountTypePlusgiro:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PaymentMeansMethod.
 const (
-	BankTransfer PaymentMeansMethod = "bank_transfer"
-	Card         PaymentMeansMethod = "card"
-	DirectDebit  PaymentMeansMethod = "direct_debit"
-	Other        PaymentMeansMethod = "other"
+	PaymentMeansMethodBankTransfer PaymentMeansMethod = "bank_transfer"
+	PaymentMeansMethodCard         PaymentMeansMethod = "card"
+	PaymentMeansMethodDirectDebit  PaymentMeansMethod = "direct_debit"
+	PaymentMeansMethodOther        PaymentMeansMethod = "other"
 )
 
 // Valid indicates whether the value is a known member of the PaymentMeansMethod enum.
 func (e PaymentMeansMethod) Valid() bool {
 	switch e {
-	case BankTransfer:
+	case PaymentMeansMethodBankTransfer:
 		return true
-	case Card:
+	case PaymentMeansMethodCard:
 		return true
-	case DirectDebit:
+	case PaymentMeansMethodDirectDebit:
 		return true
-	case Other:
+	case PaymentMeansMethodOther:
 		return true
 	default:
 		return false
@@ -1385,7 +1409,10 @@ type DocumentCreate struct {
 	// Number Your document number (e.g., "INV-2026-001")
 	Number string `json:"number"`
 
-	// PaymentMeans How the document should be paid (method and bank details).
+	// PaymentMeans How the document should be paid: one method, one reference, and one or
+	// more accounts. Use `accounts` for a bankgiro or plusgiro number or for
+	// more than one account. `iban` and `bic` are the older form of one
+	// `iban` account: they give a 400 together with `accounts`.
 	PaymentMeans *PaymentMeans `json:"payment_means,omitempty"`
 
 	// PrecedingInvoice Preceding invoice reference — the earlier invoice this document
@@ -1995,17 +2022,39 @@ type PartyInfo struct {
 	TaxId    *string `json:"tax_id,omitempty"`
 }
 
-// PaymentMeans How the document should be paid (method and bank details).
+// PaymentAccount One account a document can be paid to.
+type PaymentAccount struct {
+	// Bic BIC (BT-86). Only for `iban` and `other`.
+	Bic *string `json:"bic,omitempty"`
+
+	// Number Payment account identifier (BT-84). Spaces and `-` are removed.
+	// `bankgiro`: 7 or 8 digits. `plusgiro`: 2 to 8 digits. `iban`: 15 to
+	// 34 characters that start with 2 letters.
+	Number string             `json:"number"`
+	Type   PaymentAccountType `json:"type"`
+}
+
+// PaymentAccountType defines model for PaymentAccount.Type.
+type PaymentAccountType string
+
+// PaymentMeans How the document should be paid: one method, one reference, and one or
+// more accounts. Use `accounts` for a bankgiro or plusgiro number or for
+// more than one account. `iban` and `bic` are the older form of one
+// `iban` account: they give a 400 together with `accounts`.
 type PaymentMeans struct {
-	Bic    *string             `json:"bic,omitempty"`
-	Iban   *string             `json:"iban,omitempty"`
+	// Accounts The accounts the buyer can pay to, with the same method and reference.
+	Accounts *[]PaymentAccount `json:"accounts,omitempty"`
+	Bic      *string           `json:"bic,omitempty"`
+	Iban     *string           `json:"iban,omitempty"`
+
+	// Method Must be `bank_transfer` when `accounts` is present.
 	Method *PaymentMeansMethod `json:"method,omitempty"`
 
 	// Reference Payment reference / structured communication
 	Reference *string `json:"reference,omitempty"`
 }
 
-// PaymentMeansMethod defines model for PaymentMeans.Method.
+// PaymentMeansMethod Must be `bank_transfer` when `accounts` is present.
 type PaymentMeansMethod string
 
 // PrecedingInvoice Preceding invoice reference — the earlier invoice this document
@@ -3073,7 +3122,10 @@ type SendDocumentJSONBody struct {
 	// Number Your document number (e.g., "INV-2026-001")
 	Number string `json:"number"`
 
-	// PaymentMeans How the document should be paid (method and bank details).
+	// PaymentMeans How the document should be paid: one method, one reference, and one or
+	// more accounts. Use `accounts` for a bankgiro or plusgiro number or for
+	// more than one account. `iban` and `bic` are the older form of one
+	// `iban` account: they give a 400 together with `accounts`.
 	PaymentMeans *PaymentMeans `json:"payment_means,omitempty"`
 
 	// PrecedingInvoice Preceding invoice reference — the earlier invoice this document
@@ -3185,7 +3237,10 @@ type SendDocumentBatchJSONBody = []struct {
 	// Number Your document number (e.g., "INV-2026-001")
 	Number string `json:"number"`
 
-	// PaymentMeans How the document should be paid (method and bank details).
+	// PaymentMeans How the document should be paid: one method, one reference, and one or
+	// more accounts. Use `accounts` for a bankgiro or plusgiro number or for
+	// more than one account. `iban` and `bic` are the older form of one
+	// `iban` account: they give a 400 together with `accounts`.
 	PaymentMeans *PaymentMeans `json:"payment_means,omitempty"`
 
 	// PrecedingInvoice Preceding invoice reference — the earlier invoice this document
@@ -3354,7 +3409,10 @@ type ValidateDocumentJSONBody struct {
 	// Number Your document number (e.g., "INV-2026-001")
 	Number string `json:"number"`
 
-	// PaymentMeans How the document should be paid (method and bank details).
+	// PaymentMeans How the document should be paid: one method, one reference, and one or
+	// more accounts. Use `accounts` for a bankgiro or plusgiro number or for
+	// more than one account. `iban` and `bic` are the older form of one
+	// `iban` account: they give a 400 together with `accounts`.
 	PaymentMeans *PaymentMeans `json:"payment_means,omitempty"`
 
 	// PrecedingInvoice Preceding invoice reference — the earlier invoice this document
