@@ -1255,10 +1255,11 @@ type DnsLookupResultDomain string
 type Document struct {
 	// AmountDue Amount due for payment (BT-115). Present only when the document
 	// was created with one; otherwise the field is omitted and the
-	// amount due is the document total with VAT. The prepaid amount
-	// (BT-113) is the document total with VAT (BT-112) less
-	// `amount_due`. `total` does not change when a document has an
-	// `amount_due`.
+	// amount due is the document total with VAT plus `rounding_amount`.
+	// The prepaid amount
+	// (BT-113) is the document total with VAT (BT-112) plus
+	// `rounding_amount` less `amount_due`. `total` does not change when
+	// a document has an `amount_due`.
 	AmountDue *float32 `json:"amount_due,omitempty"`
 
 	// BuyerReference Buyer reference (BT-10). Present only when the document was
@@ -1287,6 +1288,12 @@ type Document struct {
 	// PurchaseOrder Purchase order reference (BT-13). Present only when the document
 	// was created with one.
 	PurchaseOrder *string `json:"purchase_order,omitempty"`
+
+	// RoundingAmount Rounding amount (BT-114), signed. Present only when the document
+	// was created with one, also when it is `0`; otherwise the field is
+	// omitted. `total` does not include it, and `amount_due` stays as
+	// sent.
+	RoundingAmount *float32 `json:"rounding_amount,omitempty"`
 
 	// SalesOrder Sales order reference (BT-14). Present only when the document was
 	// created with one.
@@ -1362,13 +1369,13 @@ type DocumentCreate struct {
 	// `credit_note`.
 	//
 	// The value must be from `0` up to the document total with VAT
-	// (BT-112), with at most two decimals. A value above the total is
-	// refused with a 422 `amount_due_exceeds_total`. The prepaid amount
-	// (BT-113, `cbc:PrepaidAmount`) is not an input: it is the total
-	// with VAT less `amount_due`.
+	// (BT-112) plus `rounding_amount`, with at most two decimals. A value
+	// above that is refused with a 422 `amount_due_exceeds_total`. The
+	// prepaid amount (BT-113, `cbc:PrepaidAmount`) is not an input: it is
+	// the total with VAT plus `rounding_amount` less `amount_due`.
 	//
-	// If you omit the field, the amount due is the total with VAT and
-	// the document has no prepaid amount.
+	// If you omit the field, the amount due is the total with VAT plus
+	// `rounding_amount`, and the document has no prepaid amount.
 	AmountDue   *float32      `json:"amount_due,omitempty"`
 	Attachments *[]Attachment `json:"attachments,omitempty"`
 
@@ -1428,6 +1435,25 @@ type DocumentCreate struct {
 	// number of the buyer's purchase order.
 	PurchaseOrder *string `json:"purchase_order,omitempty"`
 
+	// RoundingAmount Rounding amount (BT-114, `cbc:PayableRoundingAmount`), in the
+	// document currency: the signed amount that rounds the amount due,
+	// for example to whole kronor. Allowed on both `invoice` and
+	// `credit_note`, for any seller country and currency.
+	//
+	// The amount due (BT-115) is the total with VAT (BT-112) less the
+	// prepaid amount (BT-113) plus `rounding_amount`. `total` does not
+	// include it. With an `amount_due`, send the rounded amount: an
+	// `amount_due` equal to the total, with a rounding that is not `0`,
+	// is refused with a 422 `amount_due_excludes_rounding` when the
+	// rounding is positive, and with a 422 `amount_due_exceeds_total`
+	// when it is negative.
+	//
+	// The value has at most two decimals and must be below `1.00` either
+	// way. A value of `1.00` or more, or one that takes the total below
+	// `0`, is refused with a 422 `rounding_amount_out_of_range`. With `0`
+	// the document has no rounding amount in the UBL.
+	RoundingAmount *float32 `json:"rounding_amount,omitempty"`
+
 	// SalesOrder Sales order reference (BT-14), `cac:OrderReference/cbc:SalesOrderID`:
 	// the seller's own order number. Without `purchase_order`, the
 	// `cbc:ID` of the order reference is `NA`.
@@ -1457,10 +1483,11 @@ type DocumentCreateType string
 type DocumentDetail struct {
 	// AmountDue Amount due for payment (BT-115). Present only when the document
 	// was created with one; otherwise the field is omitted and the
-	// amount due is the document total with VAT. The prepaid amount
-	// (BT-113) is the document total with VAT (BT-112) less
-	// `amount_due`. `total` does not change when a document has an
-	// `amount_due`.
+	// amount due is the document total with VAT plus `rounding_amount`.
+	// The prepaid amount
+	// (BT-113) is the document total with VAT (BT-112) plus
+	// `rounding_amount` less `amount_due`. `total` does not change when
+	// a document has an `amount_due`.
 	AmountDue *float32 `json:"amount_due,omitempty"`
 
 	// BuyerReference Buyer reference (BT-10). Present only when the document was
@@ -1492,6 +1519,12 @@ type DocumentDetail struct {
 	// PurchaseOrder Purchase order reference (BT-13). Present only when the document
 	// was created with one.
 	PurchaseOrder *string `json:"purchase_order,omitempty"`
+
+	// RoundingAmount Rounding amount (BT-114), signed. Present only when the document
+	// was created with one, also when it is `0`; otherwise the field is
+	// omitted. `total` does not include it, and `amount_due` stays as
+	// sent.
+	RoundingAmount *float32 `json:"rounding_amount,omitempty"`
 
 	// SalesOrder Sales order reference (BT-14). Present only when the document was
 	// created with one.
@@ -1580,7 +1613,9 @@ type DocumentStatus string
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
-// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT. |
+// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
+// | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
+// | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2462,7 +2497,9 @@ type IdempotencyKey = string
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
-// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT. |
+// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
+// | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
+// | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2535,7 +2572,9 @@ type BadRequest = ErrorObject
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
-// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT. |
+// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
+// | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
+// | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2608,7 +2647,9 @@ type Forbidden = ErrorObject
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
-// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT. |
+// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
+// | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
+// | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2681,7 +2722,9 @@ type NotFound = ErrorObject
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
-// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT. |
+// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
+// | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
+// | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2754,7 +2797,9 @@ type PaymentRequired = ErrorObject
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
-// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT. |
+// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
+// | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
+// | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2827,7 +2872,9 @@ type RateLimited = ErrorObject
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
-// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT. |
+// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
+// | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
+// | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2900,7 +2947,9 @@ type Unauthenticated = ErrorObject
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
-// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT. |
+// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
+// | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
+// | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2973,7 +3022,9 @@ type Unauthorized = ErrorObject
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
-// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT. |
+// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
+// | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
+// | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -3072,13 +3123,13 @@ type SendDocumentJSONBody struct {
 	// `credit_note`.
 	//
 	// The value must be from `0` up to the document total with VAT
-	// (BT-112), with at most two decimals. A value above the total is
-	// refused with a 422 `amount_due_exceeds_total`. The prepaid amount
-	// (BT-113, `cbc:PrepaidAmount`) is not an input: it is the total
-	// with VAT less `amount_due`.
+	// (BT-112) plus `rounding_amount`, with at most two decimals. A value
+	// above that is refused with a 422 `amount_due_exceeds_total`. The
+	// prepaid amount (BT-113, `cbc:PrepaidAmount`) is not an input: it is
+	// the total with VAT plus `rounding_amount` less `amount_due`.
 	//
-	// If you omit the field, the amount due is the total with VAT and
-	// the document has no prepaid amount.
+	// If you omit the field, the amount due is the total with VAT plus
+	// `rounding_amount`, and the document has no prepaid amount.
 	AmountDue   *float32      `json:"amount_due,omitempty"`
 	Attachments *[]Attachment `json:"attachments,omitempty"`
 
@@ -3141,6 +3192,25 @@ type SendDocumentJSONBody struct {
 	// number of the buyer's purchase order.
 	PurchaseOrder *string `json:"purchase_order,omitempty"`
 
+	// RoundingAmount Rounding amount (BT-114, `cbc:PayableRoundingAmount`), in the
+	// document currency: the signed amount that rounds the amount due,
+	// for example to whole kronor. Allowed on both `invoice` and
+	// `credit_note`, for any seller country and currency.
+	//
+	// The amount due (BT-115) is the total with VAT (BT-112) less the
+	// prepaid amount (BT-113) plus `rounding_amount`. `total` does not
+	// include it. With an `amount_due`, send the rounded amount: an
+	// `amount_due` equal to the total, with a rounding that is not `0`,
+	// is refused with a 422 `amount_due_excludes_rounding` when the
+	// rounding is positive, and with a 422 `amount_due_exceeds_total`
+	// when it is negative.
+	//
+	// The value has at most two decimals and must be below `1.00` either
+	// way. A value of `1.00` or more, or one that takes the total below
+	// `0`, is refused with a 422 `rounding_amount_out_of_range`. With `0`
+	// the document has no rounding amount in the UBL.
+	RoundingAmount *float32 `json:"rounding_amount,omitempty"`
+
 	// SalesOrder Sales order reference (BT-14), `cac:OrderReference/cbc:SalesOrderID`:
 	// the seller's own order number. Without `purchase_order`, the
 	// `cbc:ID` of the order reference is `NA`.
@@ -3189,13 +3259,13 @@ type SendDocumentBatchJSONBody = []struct {
 	// `credit_note`.
 	//
 	// The value must be from `0` up to the document total with VAT
-	// (BT-112), with at most two decimals. A value above the total is
-	// refused with a 422 `amount_due_exceeds_total`. The prepaid amount
-	// (BT-113, `cbc:PrepaidAmount`) is not an input: it is the total
-	// with VAT less `amount_due`.
+	// (BT-112) plus `rounding_amount`, with at most two decimals. A value
+	// above that is refused with a 422 `amount_due_exceeds_total`. The
+	// prepaid amount (BT-113, `cbc:PrepaidAmount`) is not an input: it is
+	// the total with VAT plus `rounding_amount` less `amount_due`.
 	//
-	// If you omit the field, the amount due is the total with VAT and
-	// the document has no prepaid amount.
+	// If you omit the field, the amount due is the total with VAT plus
+	// `rounding_amount`, and the document has no prepaid amount.
 	AmountDue   *float32      `json:"amount_due,omitempty"`
 	Attachments *[]Attachment `json:"attachments,omitempty"`
 
@@ -3255,6 +3325,25 @@ type SendDocumentBatchJSONBody = []struct {
 	// PurchaseOrder Purchase order reference (BT-13), `cac:OrderReference/cbc:ID`: the
 	// number of the buyer's purchase order.
 	PurchaseOrder *string `json:"purchase_order,omitempty"`
+
+	// RoundingAmount Rounding amount (BT-114, `cbc:PayableRoundingAmount`), in the
+	// document currency: the signed amount that rounds the amount due,
+	// for example to whole kronor. Allowed on both `invoice` and
+	// `credit_note`, for any seller country and currency.
+	//
+	// The amount due (BT-115) is the total with VAT (BT-112) less the
+	// prepaid amount (BT-113) plus `rounding_amount`. `total` does not
+	// include it. With an `amount_due`, send the rounded amount: an
+	// `amount_due` equal to the total, with a rounding that is not `0`,
+	// is refused with a 422 `amount_due_excludes_rounding` when the
+	// rounding is positive, and with a 422 `amount_due_exceeds_total`
+	// when it is negative.
+	//
+	// The value has at most two decimals and must be below `1.00` either
+	// way. A value of `1.00` or more, or one that takes the total below
+	// `0`, is refused with a 422 `rounding_amount_out_of_range`. With `0`
+	// the document has no rounding amount in the UBL.
+	RoundingAmount *float32 `json:"rounding_amount,omitempty"`
 
 	// SalesOrder Sales order reference (BT-14), `cac:OrderReference/cbc:SalesOrderID`:
 	// the seller's own order number. Without `purchase_order`, the
@@ -3359,13 +3448,13 @@ type ValidateDocumentJSONBody struct {
 	// `credit_note`.
 	//
 	// The value must be from `0` up to the document total with VAT
-	// (BT-112), with at most two decimals. A value above the total is
-	// refused with a 422 `amount_due_exceeds_total`. The prepaid amount
-	// (BT-113, `cbc:PrepaidAmount`) is not an input: it is the total
-	// with VAT less `amount_due`.
+	// (BT-112) plus `rounding_amount`, with at most two decimals. A value
+	// above that is refused with a 422 `amount_due_exceeds_total`. The
+	// prepaid amount (BT-113, `cbc:PrepaidAmount`) is not an input: it is
+	// the total with VAT plus `rounding_amount` less `amount_due`.
 	//
-	// If you omit the field, the amount due is the total with VAT and
-	// the document has no prepaid amount.
+	// If you omit the field, the amount due is the total with VAT plus
+	// `rounding_amount`, and the document has no prepaid amount.
 	AmountDue   *float32      `json:"amount_due,omitempty"`
 	Attachments *[]Attachment `json:"attachments,omitempty"`
 
@@ -3427,6 +3516,25 @@ type ValidateDocumentJSONBody struct {
 	// PurchaseOrder Purchase order reference (BT-13), `cac:OrderReference/cbc:ID`: the
 	// number of the buyer's purchase order.
 	PurchaseOrder *string `json:"purchase_order,omitempty"`
+
+	// RoundingAmount Rounding amount (BT-114, `cbc:PayableRoundingAmount`), in the
+	// document currency: the signed amount that rounds the amount due,
+	// for example to whole kronor. Allowed on both `invoice` and
+	// `credit_note`, for any seller country and currency.
+	//
+	// The amount due (BT-115) is the total with VAT (BT-112) less the
+	// prepaid amount (BT-113) plus `rounding_amount`. `total` does not
+	// include it. With an `amount_due`, send the rounded amount: an
+	// `amount_due` equal to the total, with a rounding that is not `0`,
+	// is refused with a 422 `amount_due_excludes_rounding` when the
+	// rounding is positive, and with a 422 `amount_due_exceeds_total`
+	// when it is negative.
+	//
+	// The value has at most two decimals and must be below `1.00` either
+	// way. A value of `1.00` or more, or one that takes the total below
+	// `0`, is refused with a 422 `rounding_amount_out_of_range`. With `0`
+	// the document has no rounding amount in the UBL.
+	RoundingAmount *float32 `json:"rounding_amount,omitempty"`
 
 	// SalesOrder Sales order reference (BT-14), `cac:OrderReference/cbc:SalesOrderID`:
 	// the seller's own order number. Without `purchase_order`, the
