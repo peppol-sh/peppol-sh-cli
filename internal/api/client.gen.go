@@ -1300,7 +1300,9 @@ type Document struct {
 	SalesOrder *string    `json:"sales_order,omitempty"`
 	SentAt     *time.Time `json:"sent_at,omitempty"`
 
-	// Status Delivery status of a document.
+	// Status Delivery status of a document. A sandbox document has the same
+	// statuses, but it is `delivered` or `failed` within seconds: there is
+	// no wait for the Peppol network.
 	Status *DocumentStatus `json:"status,omitempty"`
 
 	// Subtotal Total amount without VAT (BT-109), max 2 decimals. Computed from
@@ -1535,7 +1537,9 @@ type DocumentDetail struct {
 	Sandbox bool       `json:"sandbox"`
 	SentAt  *time.Time `json:"sent_at,omitempty"`
 
-	// Status Delivery status of a document.
+	// Status Delivery status of a document. A sandbox document has the same
+	// statuses, but it is `delivered` or `failed` within seconds: there is
+	// no wait for the Peppol network.
 	Status *DocumentStatus `json:"status,omitempty"`
 
 	// Subtotal Total amount without VAT (BT-109), max 2 decimals. Computed from
@@ -1574,7 +1578,9 @@ type DocumentEvent struct {
 	// Message Detail of the event, for example the reason of a failure.
 	Message *string `json:"message"`
 
-	// ToStatus Delivery status of a document.
+	// ToStatus Delivery status of a document. A sandbox document has the same
+	// statuses, but it is `delivered` or `failed` within seconds: there is
+	// no wait for the Peppol network.
 	ToStatus DocumentStatus `json:"to_status"`
 
 	// Type The kind of event; for a status change, the new status.
@@ -1588,7 +1594,9 @@ type DocumentList struct {
 	NextCursor *string     `json:"next_cursor,omitempty"`
 }
 
-// DocumentStatus Delivery status of a document.
+// DocumentStatus Delivery status of a document. A sandbox document has the same
+// statuses, but it is `delivered` or `failed` within seconds: there is
+// no wait for the Peppol network.
 type DocumentStatus string
 
 // ErrorObject Canonical error envelope returned by every non-2xx response.
@@ -4091,7 +4099,11 @@ type ClientInterface interface {
 	// **Requires `company_id`** — the company whose provider credentials
 	// will be used. The calling account must be a member of that company.
 	//
-	// - With `ps_test_` keys: delivered via email (sandbox)
+	// - With `ps_test_` keys: the sandbox runs the checks of a live send
+	//   (the schema, the Peppol IDs, the sender is the company, the totals
+	//   and Peppol BIS 3.0, the receiver is on the Peppol network), then
+	//   simulates the delivery. See Sandbox in the introduction. Test with
+	//   the sandbox test receiver `0208:1234567894`.
 	// - With `ps_live_` keys: delivered via Peppol network (production)
 	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
@@ -4109,7 +4121,11 @@ type ClientInterface interface {
 	// **Requires `company_id`** — the company whose provider credentials
 	// will be used. The calling account must be a member of that company.
 	//
-	// - With `ps_test_` keys: delivered via email (sandbox)
+	// - With `ps_test_` keys: the sandbox runs the checks of a live send
+	//   (the schema, the Peppol IDs, the sender is the company, the totals
+	//   and Peppol BIS 3.0, the receiver is on the Peppol network), then
+	//   simulates the delivery. See Sandbox in the introduction. Test with
+	//   the sandbox test receiver `0208:1234567894`.
 	// - With `ps_live_` keys: delivered via Peppol network (production)
 	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
@@ -4438,6 +4454,11 @@ type ClientInterface interface {
 	// a dot-path in `path` (e.g. `to.tax_id`, `lines[0].unit_price`) so SDK
 	// clients can highlight the right form field.
 	//
+	// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
+	// same validation, so a document that is `valid` here passes the Peppol
+	// BIS 3.0 check of the sandbox. Only a send checks the sender and that
+	// the receiver is registered on the Peppol network.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -4457,6 +4478,11 @@ type ClientInterface interface {
 	// (e.g. `BR-S-02`) and no `path`. An issue in the request body itself has
 	// a dot-path in `path` (e.g. `to.tax_id`, `lines[0].unit_price`) so SDK
 	// clients can highlight the right form field.
+	//
+	// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
+	// same validation, so a document that is `valid` here passes the Peppol
+	// BIS 3.0 check of the sandbox. Only a send checks the sender and that
+	// the receiver is registered on the Peppol network.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -5124,8 +5150,12 @@ func (c *Client) ListDocuments(ctx context.Context, params *ListDocumentsParams,
 // **Requires `company_id`** — the company whose provider credentials
 // will be used. The calling account must be a member of that company.
 //
-// - With `ps_test_` keys: delivered via email (sandbox)
-// - With `ps_live_` keys: delivered via Peppol network (production)
+//   - With `ps_test_` keys: the sandbox runs the checks of a live send
+//     (the schema, the Peppol IDs, the sender is the company, the totals
+//     and Peppol BIS 3.0, the receiver is on the Peppol network), then
+//     simulates the delivery. See Sandbox in the introduction. Test with
+//     the sandbox test receiver `0208:1234567894`.
+//   - With `ps_live_` keys: delivered via Peppol network (production)
 //
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
@@ -5152,8 +5182,12 @@ func (c *Client) SendDocumentWithBody(ctx context.Context, params *SendDocumentP
 // **Requires `company_id`** — the company whose provider credentials
 // will be used. The calling account must be a member of that company.
 //
-// - With `ps_test_` keys: delivered via email (sandbox)
-// - With `ps_live_` keys: delivered via Peppol network (production)
+//   - With `ps_test_` keys: the sandbox runs the checks of a live send
+//     (the schema, the Peppol IDs, the sender is the company, the totals
+//     and Peppol BIS 3.0, the receiver is on the Peppol network), then
+//     simulates the delivery. See Sandbox in the introduction. Test with
+//     the sandbox test receiver `0208:1234567894`.
+//   - With `ps_live_` keys: delivered via Peppol network (production)
 //
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
@@ -5671,6 +5705,11 @@ func (c *Client) Signup(ctx context.Context, body SignupJSONRequestBody, reqEdit
 // a dot-path in `path` (e.g. `to.tax_id`, `lines[0].unit_price`) so SDK
 // clients can highlight the right form field.
 //
+// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
+// same validation, so a document that is `valid` here passes the Peppol
+// BIS 3.0 check of the sandbox. Only a send checks the sender and that
+// the receiver is registered on the Peppol network.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -5700,6 +5739,11 @@ func (c *Client) ValidateDocumentWithBody(ctx context.Context, contentType strin
 // (e.g. `BR-S-02`) and no `path`. An issue in the request body itself has
 // a dot-path in `path` (e.g. `to.tax_id`, `lines[0].unit_price`) so SDK
 // clients can highlight the right form field.
+//
+// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
+// same validation, so a document that is `valid` here passes the Peppol
+// BIS 3.0 check of the sandbox. Only a send checks the sender and that
+// the receiver is registered on the Peppol network.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -8567,7 +8611,11 @@ type ClientWithResponsesInterface interface {
 	// **Requires `company_id`** — the company whose provider credentials
 	// will be used. The calling account must be a member of that company.
 	//
-	// - With `ps_test_` keys: delivered via email (sandbox)
+	// - With `ps_test_` keys: the sandbox runs the checks of a live send
+	//   (the schema, the Peppol IDs, the sender is the company, the totals
+	//   and Peppol BIS 3.0, the receiver is on the Peppol network), then
+	//   simulates the delivery. See Sandbox in the introduction. Test with
+	//   the sandbox test receiver `0208:1234567894`.
 	// - With `ps_live_` keys: delivered via Peppol network (production)
 	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
@@ -8585,7 +8633,11 @@ type ClientWithResponsesInterface interface {
 	// **Requires `company_id`** — the company whose provider credentials
 	// will be used. The calling account must be a member of that company.
 	//
-	// - With `ps_test_` keys: delivered via email (sandbox)
+	// - With `ps_test_` keys: the sandbox runs the checks of a live send
+	//   (the schema, the Peppol IDs, the sender is the company, the totals
+	//   and Peppol BIS 3.0, the receiver is on the Peppol network), then
+	//   simulates the delivery. See Sandbox in the introduction. Test with
+	//   the sandbox test receiver `0208:1234567894`.
 	// - With `ps_live_` keys: delivered via Peppol network (production)
 	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
@@ -8934,6 +8986,11 @@ type ClientWithResponsesInterface interface {
 	// a dot-path in `path` (e.g. `to.tax_id`, `lines[0].unit_price`) so SDK
 	// clients can highlight the right form field.
 	//
+	// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
+	// same validation, so a document that is `valid` here passes the Peppol
+	// BIS 3.0 check of the sandbox. Only a send checks the sender and that
+	// the receiver is registered on the Peppol network.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -8953,6 +9010,11 @@ type ClientWithResponsesInterface interface {
 	// (e.g. `BR-S-02`) and no `path`. An issue in the request body itself has
 	// a dot-path in `path` (e.g. `to.tax_id`, `lines[0].unit_price`) so SDK
 	// clients can highlight the right form field.
+	//
+	// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
+	// same validation, so a document that is `valid` here passes the Peppol
+	// BIS 3.0 check of the sandbox. Only a send checks the sender and that
+	// the receiver is registered on the Peppol network.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -12625,8 +12687,12 @@ func (c *ClientWithResponses) ListDocumentsWithResponse(ctx context.Context, par
 // **Requires `company_id`** — the company whose provider credentials
 // will be used. The calling account must be a member of that company.
 //
-// - With `ps_test_` keys: delivered via email (sandbox)
-// - With `ps_live_` keys: delivered via Peppol network (production)
+//   - With `ps_test_` keys: the sandbox runs the checks of a live send
+//     (the schema, the Peppol IDs, the sender is the company, the totals
+//     and Peppol BIS 3.0, the receiver is on the Peppol network), then
+//     simulates the delivery. See Sandbox in the introduction. Test with
+//     the sandbox test receiver `0208:1234567894`.
+//   - With `ps_live_` keys: delivered via Peppol network (production)
 //
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
@@ -12649,8 +12715,12 @@ func (c *ClientWithResponses) SendDocumentWithBodyWithResponse(ctx context.Conte
 // **Requires `company_id`** — the company whose provider credentials
 // will be used. The calling account must be a member of that company.
 //
-// - With `ps_test_` keys: delivered via email (sandbox)
-// - With `ps_live_` keys: delivered via Peppol network (production)
+//   - With `ps_test_` keys: the sandbox runs the checks of a live send
+//     (the schema, the Peppol IDs, the sender is the company, the totals
+//     and Peppol BIS 3.0, the receiver is on the Peppol network), then
+//     simulates the delivery. See Sandbox in the introduction. Test with
+//     the sandbox test receiver `0208:1234567894`.
+//   - With `ps_live_` keys: delivered via Peppol network (production)
 //
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
@@ -13112,6 +13182,11 @@ func (c *ClientWithResponses) SignupWithResponse(ctx context.Context, body Signu
 // a dot-path in `path` (e.g. `to.tax_id`, `lines[0].unit_price`) so SDK
 // clients can highlight the right form field.
 //
+// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
+// same validation, so a document that is `valid` here passes the Peppol
+// BIS 3.0 check of the sandbox. Only a send checks the sender and that
+// the receiver is registered on the Peppol network.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -13137,6 +13212,11 @@ func (c *ClientWithResponses) ValidateDocumentWithBodyWithResponse(ctx context.C
 // (e.g. `BR-S-02`) and no `path`. An issue in the request body itself has
 // a dot-path in `path` (e.g. `to.tax_id`, `lines[0].unit_price`) so SDK
 // clients can highlight the right form field.
+//
+// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
+// same validation, so a document that is `valid` here passes the Peppol
+// BIS 3.0 check of the sandbox. Only a send checks the sender and that
+// the receiver is registered on the Peppol network.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //

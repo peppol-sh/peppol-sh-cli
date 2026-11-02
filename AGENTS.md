@@ -21,8 +21,9 @@ peppol-sh whoami --json
   one that is set wins. In CI or an agent session, set `PEPPOL_SH_API_KEY`;
   `login` is for a person at a terminal.
 - **The key prefix selects the host.** `ps_test_` goes to
-  `https://sandbox.peppol.sh` (no real Peppol network), `ps_live_` to
-  `https://api.peppol.sh`. Use a `ps_test_` key for every test. `--base-url`
+  `https://sandbox.peppol.sh` (no Peppol delivery; sends still run live
+  checks, including SML lookup), `ps_live_` to `https://api.peppol.sh`. Use a
+  `ps_test_` key for every test. `--base-url`
   or `PEPPOL_SH_BASE_URL` overrides the host (staging
   `https://staging-api.peppol.sh`, local `http://localhost:8787`).
 - **Read results with `--json`.** It prints the API response body on stdout,
