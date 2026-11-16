@@ -1618,6 +1618,7 @@ type DocumentStatus string
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
+// | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2034,7 +2035,9 @@ type Party struct {
 	// is rejected synchronously with `invalid_peppol_id` (422) instead of
 	// failing later at the provider. Scheme `0208` (BE enterprise number)
 	// must be a 10-digit CBE number with a valid mod-97 checksum; a
-	// leading `BE` is normalized away.
+	// leading `BE` is normalized away. For `from`, it must be the
+	// Peppol ID of the company, else the document is rejected with
+	// `sender_not_registered` (422).
 	PeppolId *string `json:"peppol_id,omitempty"`
 
 	// TaxId Tax ID. Required when `peppol_id` is absent, and then it must not
@@ -2053,7 +2056,10 @@ type Party struct {
 	// not sent as one, and the party then needs a `peppol_id`. For
 	// `from`, the Peppol ID of the company is used when `peppol_id` is
 	// absent. If no Peppol ID can be found, the send fails with
-	// `sender_not_derivable`.
+	// `sender_not_derivable`. For `from`, a VAT number or a `scheme:id`
+	// must give the Peppol ID of the company or be the company's own
+	// `tax_id`, else the document is rejected with
+	// `sender_not_registered` (422).
 	TaxId *string `json:"tax_id,omitempty"`
 }
 
@@ -2149,7 +2155,9 @@ type RecipientParty struct {
 	// is rejected synchronously with `invalid_peppol_id` (422) instead of
 	// failing later at the provider. Scheme `0208` (BE enterprise number)
 	// must be a 10-digit CBE number with a valid mod-97 checksum; a
-	// leading `BE` is normalized away.
+	// leading `BE` is normalized away. For `from`, it must be the
+	// Peppol ID of the company, else the document is rejected with
+	// `sender_not_registered` (422).
 	PeppolId *string `json:"peppol_id,omitempty"`
 
 	// TaxId Tax ID. Required when `peppol_id` is absent, and then it must not
@@ -2168,7 +2176,10 @@ type RecipientParty struct {
 	// not sent as one, and the party then needs a `peppol_id`. For
 	// `from`, the Peppol ID of the company is used when `peppol_id` is
 	// absent. If no Peppol ID can be found, the send fails with
-	// `sender_not_derivable`.
+	// `sender_not_derivable`. For `from`, a VAT number or a `scheme:id`
+	// must give the Peppol ID of the company or be the company's own
+	// `tax_id`, else the document is rejected with
+	// `sender_not_registered` (422).
 	TaxId *string `json:"tax_id,omitempty"`
 }
 
@@ -2332,8 +2343,9 @@ type UsageResponse struct {
 type ValidationIssue struct {
 	// Code Machine-readable issue code: the Peppol validation rule id (e.g.
 	// `BR-S-02`), our own code for a request body issue (e.g.
-	// `invalid_document_body`), or `invalid_document` when the provider
-	// rejects the document without a rule id.
+	// `invalid_document_body`, `sender_not_registered`), or
+	// `invalid_document` when the provider rejects the document without
+	// a rule id.
 	Code *string `json:"code,omitempty"`
 
 	// Message Human-readable description of the issue.
@@ -2508,6 +2520,7 @@ type IdempotencyKey = string
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
+// | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2589,6 +2602,7 @@ type BadRequest = ErrorObject
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
+// | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2670,6 +2684,7 @@ type Forbidden = ErrorObject
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
+// | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2751,6 +2766,7 @@ type NotFound = ErrorObject
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
+// | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2832,6 +2848,7 @@ type PaymentRequired = ErrorObject
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
+// | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2913,6 +2930,7 @@ type RateLimited = ErrorObject
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
+// | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2994,6 +3012,7 @@ type Unauthenticated = ErrorObject
 // | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
+// | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3055,87 +3074,6 @@ type Unauthenticated = ErrorObject
 // | billing_error | `sandbox_not_allowed` | Billing endpoints (e.g. `POST /v1/billing/checkout`) reject sandbox API keys. |
 // | internal_error | `internal_error` | Unexpected server error. Give us the `request_id` so that we can find it. |
 type Unauthorized = ErrorObject
-
-// ValidationError Canonical error envelope returned by every non-2xx response.
-//
-// **Shape:** `{ error: { type, code, message, param?, details? } }`
-//
-// ### Error codes
-//
-// | `type` | `code` | Meaning |
-// |---|---|---|
-// | validation_error | `missing_field` | A required field was omitted. |
-// | validation_error | `invalid_field` | A field is present but has an invalid value or format. |
-// | validation_error | `email_taken` | 409 — an account with this email already exists. |
-// | validation_error | `already_member` | 409 — account is already a member of this company. |
-// | validation_error | `no_fields_to_update` | PATCH with an empty update body. |
-// | validation_error | `last_owner` | Cannot remove/demote the last owner of a company. |
-// | validation_error | `invalid_account_status` | Operation not allowed in the account's current status. |
-// | validation_error | `invalid_peppol_id` | Peppol participant ID has an invalid format, check digit or scheme. |
-// | validation_error | `missing_peppol_id` | 400 — a company needs a Peppol ID and none was given or derived. |
-// | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
-// | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
-// | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
-// | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
-// | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
-// | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
-// | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
-// | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
-// | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
-// | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
-// | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
-// | validation_error | `ubl_schema_invalid` | UBL payload failed Zod schema validation (see `details.issues`). |
-// | validation_error | `ubl_business_rule` | UBL payload failed business rule validation (see `details`). |
-// | validation_error | `ubl_missing_document_type` | UBL payload has neither `invoiceLine` nor `creditNoteLine`. |
-// | validation_error | `unsupported_content_type` | Request Content-Type is not supported by this endpoint. |
-// | authentication_error | `missing_api_key` | `Authorization` header missing. |
-// | authentication_error | `invalid_api_key` | API key format is wrong or key is unknown. |
-// | authentication_error | `disabled_account` | 403 — account is disabled. |
-// | authorization_error | `not_a_member` | Caller is not a member of the specified company. |
-// | authorization_error | `insufficient_role` | Caller's role is too low for this operation. |
-// | validation_error | `invalid_country` | 400 — country is unknown or not Peppol-active. |
-// | validation_error | `kyc_missing_content` | 400 — KYC upload `content` is absent or empty. |
-// | validation_error | `kyc_invalid_encoding` | 400 — KYC upload `content` is not valid base64. |
-// | validation_error | `kyc_invalid_doc_type` | 400 — `doc_type` is not a recognised KYC document type. |
-// | validation_error | `kyc_unsupported_type` | 400 — sniffed magic bytes match no accepted type. |
-// | validation_error | `kyc_mime_mismatch` | 400 — declared `mime_type` disagrees with the sniffed type. |
-// | validation_error | `kyc_mandate_requires_company` | 400 — a `mandate` upload is missing `company_id`/`mandate_grantor_name`. |
-// | validation_error | `kyc_doc_pairing_invalid` | 400 — a workspace document carries `company_id`/`mandate_grantor_name`. |
-// | validation_error | `kyc_document_too_large` | 413 — KYC document exceeds the 10 MB cap. |
-// | validation_error | `kyc_locked` | 409 — KYC uploads are locked (status is `pending`/`approved`). |
-// | validation_error | `kyc_not_submittable` | 409 — workspace is not in a submittable state. |
-// | validation_error | `kyc_no_companies` | 422 — workspace has no companies. |
-// | validation_error | `kyc_no_own_company` | 422 — submit `company_id` was blank. |
-// | validation_error | `kyc_invalid_company` | 422 — submit `company_id` is not a company of this workspace. |
-// | validation_error | `kyc_missing_documents` | 422 — a required workspace doc type is missing (`details.missing`). |
-// | validation_error | `kyc_missing_legal_name` | 422 — `kyc_legal_name` was blank. |
-// | validation_error | `kyc_missing_enterprise_number` | 422 — `kyc_enterprise_number` was blank. |
-// | validation_error | `kyc_attestation_incomplete` | 422 — `attestation_name` or `attestation_role` was blank. |
-// | validation_error | `kyc_attestation_not_accepted` | 422 — `attested` was not `true`. |
-// | validation_error | `kyc_attestation_version_mismatch` | 422 — `attestation_version` is not the current version. |
-// | validation_error | `top_up_no_kyc_company` | 422 — `POST /v1/billing/checkout`: the KYC-approved workspace has no KYC company. |
-// | validation_error | `top_up_no_eu_country` | 422 — `POST /v1/billing/checkout`: the KYC company is not in the EU. |
-// | validation_error | `top_up_no_vat_number` | 422 — `POST /v1/billing/checkout`: the KYC company has no VAT number. |
-// | validation_error | `top_up_vat_number_invalid` | 422 — `POST /v1/billing/checkout`: VIES says the VAT number of the KYC company is not valid. |
-// | validation_error | `top_up_vat_country_mismatch` | 422 — `POST /v1/billing/checkout`: the VAT number's member state is not the country of the KYC company. |
-// | not_found | `company_not_found` | Company does not exist or caller cannot see it. |
-// | not_found | `workspace_not_found` | Workspace row not found. |
-// | not_found | `webhook_not_found` | Webhook not found in the caller's workspace. |
-// | not_found | `account_not_found` | Authenticated account was not found. |
-// | not_found | `member_not_found` | Target account is not a member of the company. |
-// | not_found | `document_not_found` | Document does not exist. |
-// | not_found | `api_key_not_found` | API key not found or already revoked. |
-// | not_found | `participant_not_found` | Peppol participant not found in SML/SMP. |
-// | not_found | `route_not_found` | HTTP method/path does not match any route. |
-// | provider_error | `provider_error` | Upstream provider returned an unexpected error. |
-// | provider_error | `provider_validation_failed` | Upstream provider rejected the payload (see `details`). |
-// | provider_error | `smp_error` | SMP or DNS lookup failed. |
-// | provider_error | `vat_check_unavailable` | 503 — `POST /v1/billing/checkout`: VIES is not available and there is no valid VIES result of the last 30 days. Try again later. |
-// | rate_limit_error | `rate_limit_exceeded` | Too many requests. Wait for the `Retry-After` time, then retry. |
-// | billing_error | `insufficient_credits` | Company does not have enough credits to send the document(s). Purchase more via `POST /v1/billing/checkout`. |
-// | billing_error | `sandbox_not_allowed` | Billing endpoints (e.g. `POST /v1/billing/checkout`) reject sandbox API keys. |
-// | internal_error | `internal_error` | Unexpected server error. Give us the `request_id` so that we can find it. |
-type ValidationError = ErrorObject
 
 // GetProtectedResourceMetadata200JSONResponseBodyBearerMethodsSupported defines parameters for GetProtectedResourceMetadata.
 type GetProtectedResourceMetadata200JSONResponseBodyBearerMethodsSupported string
@@ -4154,11 +4092,18 @@ type ClientInterface interface {
 	// will be used. The calling account must be a member of that company.
 	//
 	// - With `ps_test_` keys: the sandbox runs the checks of a live send
-	//   (the schema, the Peppol IDs, the sender is the company, the totals
-	//   and Peppol BIS 3.0, the receiver is on the Peppol network), then
-	//   simulates the delivery. See Sandbox in the introduction. Test with
-	//   the sandbox test receiver `0208:1234567894`.
+	//   (the schema, the Peppol IDs, the totals and Peppol BIS 3.0, the
+	//   receiver is on the Peppol network), then simulates the delivery.
+	//   See Sandbox in the introduction. Test with the sandbox test
+	//   receiver `0208:1234567894`.
 	// - With `ps_live_` keys: delivered via Peppol network (production)
+	//
+	// The sender in `from` must be the company of `company_id`, for both
+	// key modes. If it is not, the response is a `422` with the code
+	// `sender_not_registered` and `param` `from.peppol_id` or
+	// `from.tax_id`. No credit is charged, no document is made. A `from`
+	// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
+	// sends as the company. See Sandbox in the introduction for the rule.
 	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
@@ -4176,11 +4121,18 @@ type ClientInterface interface {
 	// will be used. The calling account must be a member of that company.
 	//
 	// - With `ps_test_` keys: the sandbox runs the checks of a live send
-	//   (the schema, the Peppol IDs, the sender is the company, the totals
-	//   and Peppol BIS 3.0, the receiver is on the Peppol network), then
-	//   simulates the delivery. See Sandbox in the introduction. Test with
-	//   the sandbox test receiver `0208:1234567894`.
+	//   (the schema, the Peppol IDs, the totals and Peppol BIS 3.0, the
+	//   receiver is on the Peppol network), then simulates the delivery.
+	//   See Sandbox in the introduction. Test with the sandbox test
+	//   receiver `0208:1234567894`.
 	// - With `ps_live_` keys: delivered via Peppol network (production)
+	//
+	// The sender in `from` must be the company of `company_id`, for both
+	// key modes. If it is not, the response is a `422` with the code
+	// `sender_not_registered` and `param` `from.peppol_id` or
+	// `from.tax_id`. No credit is charged, no document is made. A `from`
+	// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
+	// sends as the company. See Sandbox in the introduction for the rule.
 	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
@@ -4204,6 +4156,10 @@ type ClientInterface interface {
 	// accepted gets the `id` and `url` of the existing document and does
 	// not cost a credit.
 	//
+	// An item whose sender in `from` is not the company gets an error
+	// object with the code `sender_not_registered` in the response array,
+	// as in `POST /v1/documents`. It does not cost a credit.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /v1/documents/batch (the `SendDocumentBatch` operationId).
@@ -4222,6 +4178,10 @@ type ClientInterface interface {
 	// `idempotency_key` on each document. An item whose key was already
 	// accepted gets the `id` and `url` of the existing document and does
 	// not cost a credit.
+	//
+	// An item whose sender in `from` is not the company gets an error
+	// object with the code `sender_not_registered` in the response array,
+	// as in `POST /v1/documents`. It does not cost a credit.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -4510,8 +4470,13 @@ type ClientInterface interface {
 	//
 	// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
 	// same validation, so a document that is `valid` here passes the Peppol
-	// BIS 3.0 check of the sandbox. Only a send checks the sender and that
-	// the receiver is registered on the Peppol network.
+	// BIS 3.0 check of the sandbox. Only a send checks that the receiver is
+	// registered on the Peppol network.
+	//
+	// The sender is checked as in `POST /v1/documents`. A sender in `from`
+	// that is not the company gives `valid: false` and an entry in `errors`
+	// with `path` `from.peppol_id` or `from.tax_id` and `code`
+	// `sender_not_registered`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -4535,8 +4500,13 @@ type ClientInterface interface {
 	//
 	// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
 	// same validation, so a document that is `valid` here passes the Peppol
-	// BIS 3.0 check of the sandbox. Only a send checks the sender and that
-	// the receiver is registered on the Peppol network.
+	// BIS 3.0 check of the sandbox. Only a send checks that the receiver is
+	// registered on the Peppol network.
+	//
+	// The sender is checked as in `POST /v1/documents`. A sender in `from`
+	// that is not the company gives `valid: false` and an entry in `errors`
+	// with `path` `from.peppol_id` or `from.tax_id` and `code`
+	// `sender_not_registered`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -5205,11 +5175,18 @@ func (c *Client) ListDocuments(ctx context.Context, params *ListDocumentsParams,
 // will be used. The calling account must be a member of that company.
 //
 //   - With `ps_test_` keys: the sandbox runs the checks of a live send
-//     (the schema, the Peppol IDs, the sender is the company, the totals
-//     and Peppol BIS 3.0, the receiver is on the Peppol network), then
-//     simulates the delivery. See Sandbox in the introduction. Test with
-//     the sandbox test receiver `0208:1234567894`.
+//     (the schema, the Peppol IDs, the totals and Peppol BIS 3.0, the
+//     receiver is on the Peppol network), then simulates the delivery.
+//     See Sandbox in the introduction. Test with the sandbox test
+//     receiver `0208:1234567894`.
 //   - With `ps_live_` keys: delivered via Peppol network (production)
+//
+// The sender in `from` must be the company of `company_id`, for both
+// key modes. If it is not, the response is a `422` with the code
+// `sender_not_registered` and `param` `from.peppol_id` or
+// `from.tax_id`. No credit is charged, no document is made. A `from`
+// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
+// sends as the company. See Sandbox in the introduction for the rule.
 //
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
@@ -5237,11 +5214,18 @@ func (c *Client) SendDocumentWithBody(ctx context.Context, params *SendDocumentP
 // will be used. The calling account must be a member of that company.
 //
 //   - With `ps_test_` keys: the sandbox runs the checks of a live send
-//     (the schema, the Peppol IDs, the sender is the company, the totals
-//     and Peppol BIS 3.0, the receiver is on the Peppol network), then
-//     simulates the delivery. See Sandbox in the introduction. Test with
-//     the sandbox test receiver `0208:1234567894`.
+//     (the schema, the Peppol IDs, the totals and Peppol BIS 3.0, the
+//     receiver is on the Peppol network), then simulates the delivery.
+//     See Sandbox in the introduction. Test with the sandbox test
+//     receiver `0208:1234567894`.
 //   - With `ps_live_` keys: delivered via Peppol network (production)
+//
+// The sender in `from` must be the company of `company_id`, for both
+// key modes. If it is not, the response is a `422` with the code
+// `sender_not_registered` and `param` `from.peppol_id` or
+// `from.tax_id`. No credit is charged, no document is made. A `from`
+// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
+// sends as the company. See Sandbox in the introduction for the rule.
 //
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
@@ -5275,6 +5259,10 @@ func (c *Client) SendDocument(ctx context.Context, params *SendDocumentParams, b
 // accepted gets the `id` and `url` of the existing document and does
 // not cost a credit.
 //
+// An item whose sender in `from` is not the company gets an error
+// object with the code `sender_not_registered` in the response array,
+// as in `POST /v1/documents`. It does not cost a credit.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /v1/documents/batch (the `SendDocumentBatch` operationId).
@@ -5303,6 +5291,10 @@ func (c *Client) SendDocumentBatchWithBody(ctx context.Context, contentType stri
 // `idempotency_key` on each document. An item whose key was already
 // accepted gets the `id` and `url` of the existing document and does
 // not cost a credit.
+//
+// An item whose sender in `from` is not the company gets an error
+// object with the code `sender_not_registered` in the response array,
+// as in `POST /v1/documents`. It does not cost a credit.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -5761,8 +5753,13 @@ func (c *Client) Signup(ctx context.Context, body SignupJSONRequestBody, reqEdit
 //
 // A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
 // same validation, so a document that is `valid` here passes the Peppol
-// BIS 3.0 check of the sandbox. Only a send checks the sender and that
-// the receiver is registered on the Peppol network.
+// BIS 3.0 check of the sandbox. Only a send checks that the receiver is
+// registered on the Peppol network.
+//
+// The sender is checked as in `POST /v1/documents`. A sender in `from`
+// that is not the company gives `valid: false` and an entry in `errors`
+// with `path` `from.peppol_id` or `from.tax_id` and `code`
+// `sender_not_registered`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -5796,8 +5793,13 @@ func (c *Client) ValidateDocumentWithBody(ctx context.Context, contentType strin
 //
 // A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
 // same validation, so a document that is `valid` here passes the Peppol
-// BIS 3.0 check of the sandbox. Only a send checks the sender and that
-// the receiver is registered on the Peppol network.
+// BIS 3.0 check of the sandbox. Only a send checks that the receiver is
+// registered on the Peppol network.
+//
+// The sender is checked as in `POST /v1/documents`. A sender in `from`
+// that is not the company gives `valid: false` and an entry in `errors`
+// with `path` `from.peppol_id` or `from.tax_id` and `code`
+// `sender_not_registered`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -8666,11 +8668,18 @@ type ClientWithResponsesInterface interface {
 	// will be used. The calling account must be a member of that company.
 	//
 	// - With `ps_test_` keys: the sandbox runs the checks of a live send
-	//   (the schema, the Peppol IDs, the sender is the company, the totals
-	//   and Peppol BIS 3.0, the receiver is on the Peppol network), then
-	//   simulates the delivery. See Sandbox in the introduction. Test with
-	//   the sandbox test receiver `0208:1234567894`.
+	//   (the schema, the Peppol IDs, the totals and Peppol BIS 3.0, the
+	//   receiver is on the Peppol network), then simulates the delivery.
+	//   See Sandbox in the introduction. Test with the sandbox test
+	//   receiver `0208:1234567894`.
 	// - With `ps_live_` keys: delivered via Peppol network (production)
+	//
+	// The sender in `from` must be the company of `company_id`, for both
+	// key modes. If it is not, the response is a `422` with the code
+	// `sender_not_registered` and `param` `from.peppol_id` or
+	// `from.tax_id`. No credit is charged, no document is made. A `from`
+	// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
+	// sends as the company. See Sandbox in the introduction for the rule.
 	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
@@ -8688,11 +8697,18 @@ type ClientWithResponsesInterface interface {
 	// will be used. The calling account must be a member of that company.
 	//
 	// - With `ps_test_` keys: the sandbox runs the checks of a live send
-	//   (the schema, the Peppol IDs, the sender is the company, the totals
-	//   and Peppol BIS 3.0, the receiver is on the Peppol network), then
-	//   simulates the delivery. See Sandbox in the introduction. Test with
-	//   the sandbox test receiver `0208:1234567894`.
+	//   (the schema, the Peppol IDs, the totals and Peppol BIS 3.0, the
+	//   receiver is on the Peppol network), then simulates the delivery.
+	//   See Sandbox in the introduction. Test with the sandbox test
+	//   receiver `0208:1234567894`.
 	// - With `ps_live_` keys: delivered via Peppol network (production)
+	//
+	// The sender in `from` must be the company of `company_id`, for both
+	// key modes. If it is not, the response is a `422` with the code
+	// `sender_not_registered` and `param` `from.peppol_id` or
+	// `from.tax_id`. No credit is charged, no document is made. A `from`
+	// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
+	// sends as the company. See Sandbox in the introduction for the rule.
 	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
@@ -8716,6 +8732,10 @@ type ClientWithResponsesInterface interface {
 	// accepted gets the `id` and `url` of the existing document and does
 	// not cost a credit.
 	//
+	// An item whose sender in `from` is not the company gets an error
+	// object with the code `sender_not_registered` in the response array,
+	// as in `POST /v1/documents`. It does not cost a credit.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /v1/documents/batch (the `SendDocumentBatch` operationId).
@@ -8734,6 +8754,10 @@ type ClientWithResponsesInterface interface {
 	// `idempotency_key` on each document. An item whose key was already
 	// accepted gets the `id` and `url` of the existing document and does
 	// not cost a credit.
+	//
+	// An item whose sender in `from` is not the company gets an error
+	// object with the code `sender_not_registered` in the response array,
+	// as in `POST /v1/documents`. It does not cost a credit.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -9042,8 +9066,13 @@ type ClientWithResponsesInterface interface {
 	//
 	// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
 	// same validation, so a document that is `valid` here passes the Peppol
-	// BIS 3.0 check of the sandbox. Only a send checks the sender and that
-	// the receiver is registered on the Peppol network.
+	// BIS 3.0 check of the sandbox. Only a send checks that the receiver is
+	// registered on the Peppol network.
+	//
+	// The sender is checked as in `POST /v1/documents`. A sender in `from`
+	// that is not the company gives `valid: false` and an entry in `errors`
+	// with `path` `from.peppol_id` or `from.tax_id` and `code`
+	// `sender_not_registered`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -9067,8 +9096,13 @@ type ClientWithResponsesInterface interface {
 	//
 	// A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
 	// same validation, so a document that is `valid` here passes the Peppol
-	// BIS 3.0 check of the sandbox. Only a send checks the sender and that
-	// the receiver is registered on the Peppol network.
+	// BIS 3.0 check of the sandbox. Only a send checks that the receiver is
+	// registered on the Peppol network.
+	//
+	// The sender is checked as in `POST /v1/documents`. A sender in `from`
+	// that is not the company gives `valid: false` and an entry in `errors`
+	// with `path` `from.peppol_id` or `from.tax_id` and `code`
+	// `sender_not_registered`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -10121,7 +10155,7 @@ type SendDocumentResp struct {
 	// JSON403 the response for an HTTP 403 `application/json` response
 	JSON403 *ErrorObject
 	// JSON422 the response for an HTTP 422 `application/json` response
-	JSON422 *ValidationError
+	JSON422 *ErrorObject
 	// JSON429 the response for an HTTP 429 `application/json` response
 	JSON429 *RateLimited
 	// Headers202 the parsed response headers for an HTTP 202 response
@@ -10163,7 +10197,7 @@ func (r SendDocumentResp) GetJSON403() *ErrorObject {
 }
 
 // GetJSON422 returns the response for an HTTP 422 `application/json` response
-func (r SendDocumentResp) GetJSON422() *ValidationError {
+func (r SendDocumentResp) GetJSON422() *ErrorObject {
 	return r.JSON422
 }
 
@@ -12742,11 +12776,18 @@ func (c *ClientWithResponses) ListDocumentsWithResponse(ctx context.Context, par
 // will be used. The calling account must be a member of that company.
 //
 //   - With `ps_test_` keys: the sandbox runs the checks of a live send
-//     (the schema, the Peppol IDs, the sender is the company, the totals
-//     and Peppol BIS 3.0, the receiver is on the Peppol network), then
-//     simulates the delivery. See Sandbox in the introduction. Test with
-//     the sandbox test receiver `0208:1234567894`.
+//     (the schema, the Peppol IDs, the totals and Peppol BIS 3.0, the
+//     receiver is on the Peppol network), then simulates the delivery.
+//     See Sandbox in the introduction. Test with the sandbox test
+//     receiver `0208:1234567894`.
 //   - With `ps_live_` keys: delivered via Peppol network (production)
+//
+// The sender in `from` must be the company of `company_id`, for both
+// key modes. If it is not, the response is a `422` with the code
+// `sender_not_registered` and `param` `from.peppol_id` or
+// `from.tax_id`. No credit is charged, no document is made. A `from`
+// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
+// sends as the company. See Sandbox in the introduction for the rule.
 //
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
@@ -12770,11 +12811,18 @@ func (c *ClientWithResponses) SendDocumentWithBodyWithResponse(ctx context.Conte
 // will be used. The calling account must be a member of that company.
 //
 //   - With `ps_test_` keys: the sandbox runs the checks of a live send
-//     (the schema, the Peppol IDs, the sender is the company, the totals
-//     and Peppol BIS 3.0, the receiver is on the Peppol network), then
-//     simulates the delivery. See Sandbox in the introduction. Test with
-//     the sandbox test receiver `0208:1234567894`.
+//     (the schema, the Peppol IDs, the totals and Peppol BIS 3.0, the
+//     receiver is on the Peppol network), then simulates the delivery.
+//     See Sandbox in the introduction. Test with the sandbox test
+//     receiver `0208:1234567894`.
 //   - With `ps_live_` keys: delivered via Peppol network (production)
+//
+// The sender in `from` must be the company of `company_id`, for both
+// key modes. If it is not, the response is a `422` with the code
+// `sender_not_registered` and `param` `from.peppol_id` or
+// `from.tax_id`. No credit is charged, no document is made. A `from`
+// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
+// sends as the company. See Sandbox in the introduction for the rule.
 //
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
@@ -12804,6 +12852,10 @@ func (c *ClientWithResponses) SendDocumentWithResponse(ctx context.Context, para
 // accepted gets the `id` and `url` of the existing document and does
 // not cost a credit.
 //
+// An item whose sender in `from` is not the company gets an error
+// object with the code `sender_not_registered` in the response array,
+// as in `POST /v1/documents`. It does not cost a credit.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /v1/documents/batch (the `SendDocumentBatch` operationId).
@@ -12828,6 +12880,10 @@ func (c *ClientWithResponses) SendDocumentBatchWithBodyWithResponse(ctx context.
 // `idempotency_key` on each document. An item whose key was already
 // accepted gets the `id` and `url` of the existing document and does
 // not cost a credit.
+//
+// An item whose sender in `from` is not the company gets an error
+// object with the code `sender_not_registered` in the response array,
+// as in `POST /v1/documents`. It does not cost a credit.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -13238,8 +13294,13 @@ func (c *ClientWithResponses) SignupWithResponse(ctx context.Context, body Signu
 //
 // A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
 // same validation, so a document that is `valid` here passes the Peppol
-// BIS 3.0 check of the sandbox. Only a send checks the sender and that
-// the receiver is registered on the Peppol network.
+// BIS 3.0 check of the sandbox. Only a send checks that the receiver is
+// registered on the Peppol network.
+//
+// The sender is checked as in `POST /v1/documents`. A sender in `from`
+// that is not the company gives `valid: false` and an entry in `errors`
+// with `path` `from.peppol_id` or `from.tax_id` and `code`
+// `sender_not_registered`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -13269,8 +13330,13 @@ func (c *ClientWithResponses) ValidateDocumentWithBodyWithResponse(ctx context.C
 //
 // A sandbox send (`POST /v1/documents` with a `ps_test_` key) runs this
 // same validation, so a document that is `valid` here passes the Peppol
-// BIS 3.0 check of the sandbox. Only a send checks the sender and that
-// the receiver is registered on the Peppol network.
+// BIS 3.0 check of the sandbox. Only a send checks that the receiver is
+// registered on the Peppol network.
+//
+// The sender is checked as in `POST /v1/documents`. A sender in `from`
+// that is not the company gives `valid: false` and an entry in `errors`
+// with `path` `from.peppol_id` or `from.tax_id` and `code`
+// `sender_not_registered`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -14357,7 +14423,7 @@ func ParseSendDocumentResp(rsp *http.Response) (*SendDocumentResp, error) {
 		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest ValidationError
+		var dest ErrorObject
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
