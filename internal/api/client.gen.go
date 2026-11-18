@@ -187,6 +187,63 @@ func (e DocumentAcceptedStatus) Valid() bool {
 	}
 }
 
+// Defines values for DocumentCreateCurrency.
+const (
+	DocumentCreateCurrencyAUD DocumentCreateCurrency = "AUD"
+	DocumentCreateCurrencyCAD DocumentCreateCurrency = "CAD"
+	DocumentCreateCurrencyCHF DocumentCreateCurrency = "CHF"
+	DocumentCreateCurrencyCNY DocumentCreateCurrency = "CNY"
+	DocumentCreateCurrencyDKK DocumentCreateCurrency = "DKK"
+	DocumentCreateCurrencyEUR DocumentCreateCurrency = "EUR"
+	DocumentCreateCurrencyGBP DocumentCreateCurrency = "GBP"
+	DocumentCreateCurrencyHKD DocumentCreateCurrency = "HKD"
+	DocumentCreateCurrencyINR DocumentCreateCurrency = "INR"
+	DocumentCreateCurrencyJPY DocumentCreateCurrency = "JPY"
+	DocumentCreateCurrencyNOK DocumentCreateCurrency = "NOK"
+	DocumentCreateCurrencyNZD DocumentCreateCurrency = "NZD"
+	DocumentCreateCurrencySEK DocumentCreateCurrency = "SEK"
+	DocumentCreateCurrencySGD DocumentCreateCurrency = "SGD"
+	DocumentCreateCurrencyUSD DocumentCreateCurrency = "USD"
+)
+
+// Valid indicates whether the value is a known member of the DocumentCreateCurrency enum.
+func (e DocumentCreateCurrency) Valid() bool {
+	switch e {
+	case DocumentCreateCurrencyAUD:
+		return true
+	case DocumentCreateCurrencyCAD:
+		return true
+	case DocumentCreateCurrencyCHF:
+		return true
+	case DocumentCreateCurrencyCNY:
+		return true
+	case DocumentCreateCurrencyDKK:
+		return true
+	case DocumentCreateCurrencyEUR:
+		return true
+	case DocumentCreateCurrencyGBP:
+		return true
+	case DocumentCreateCurrencyHKD:
+		return true
+	case DocumentCreateCurrencyINR:
+		return true
+	case DocumentCreateCurrencyJPY:
+		return true
+	case DocumentCreateCurrencyNOK:
+		return true
+	case DocumentCreateCurrencyNZD:
+		return true
+	case DocumentCreateCurrencySEK:
+		return true
+	case DocumentCreateCurrencySGD:
+		return true
+	case DocumentCreateCurrencyUSD:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DocumentCreateType.
 const (
 	DocumentCreateTypeCreditNote DocumentCreateType = "credit_note"
@@ -703,6 +760,63 @@ func (e GetProtectedResourceMetadata200JSONResponseBodyBearerMethodsSupported) V
 	}
 }
 
+// Defines values for SendDocumentJSONBodyCurrency.
+const (
+	SendDocumentJSONBodyCurrencyAUD SendDocumentJSONBodyCurrency = "AUD"
+	SendDocumentJSONBodyCurrencyCAD SendDocumentJSONBodyCurrency = "CAD"
+	SendDocumentJSONBodyCurrencyCHF SendDocumentJSONBodyCurrency = "CHF"
+	SendDocumentJSONBodyCurrencyCNY SendDocumentJSONBodyCurrency = "CNY"
+	SendDocumentJSONBodyCurrencyDKK SendDocumentJSONBodyCurrency = "DKK"
+	SendDocumentJSONBodyCurrencyEUR SendDocumentJSONBodyCurrency = "EUR"
+	SendDocumentJSONBodyCurrencyGBP SendDocumentJSONBodyCurrency = "GBP"
+	SendDocumentJSONBodyCurrencyHKD SendDocumentJSONBodyCurrency = "HKD"
+	SendDocumentJSONBodyCurrencyINR SendDocumentJSONBodyCurrency = "INR"
+	SendDocumentJSONBodyCurrencyJPY SendDocumentJSONBodyCurrency = "JPY"
+	SendDocumentJSONBodyCurrencyNOK SendDocumentJSONBodyCurrency = "NOK"
+	SendDocumentJSONBodyCurrencyNZD SendDocumentJSONBodyCurrency = "NZD"
+	SendDocumentJSONBodyCurrencySEK SendDocumentJSONBodyCurrency = "SEK"
+	SendDocumentJSONBodyCurrencySGD SendDocumentJSONBodyCurrency = "SGD"
+	SendDocumentJSONBodyCurrencyUSD SendDocumentJSONBodyCurrency = "USD"
+)
+
+// Valid indicates whether the value is a known member of the SendDocumentJSONBodyCurrency enum.
+func (e SendDocumentJSONBodyCurrency) Valid() bool {
+	switch e {
+	case SendDocumentJSONBodyCurrencyAUD:
+		return true
+	case SendDocumentJSONBodyCurrencyCAD:
+		return true
+	case SendDocumentJSONBodyCurrencyCHF:
+		return true
+	case SendDocumentJSONBodyCurrencyCNY:
+		return true
+	case SendDocumentJSONBodyCurrencyDKK:
+		return true
+	case SendDocumentJSONBodyCurrencyEUR:
+		return true
+	case SendDocumentJSONBodyCurrencyGBP:
+		return true
+	case SendDocumentJSONBodyCurrencyHKD:
+		return true
+	case SendDocumentJSONBodyCurrencyINR:
+		return true
+	case SendDocumentJSONBodyCurrencyJPY:
+		return true
+	case SendDocumentJSONBodyCurrencyNOK:
+		return true
+	case SendDocumentJSONBodyCurrencyNZD:
+		return true
+	case SendDocumentJSONBodyCurrencySEK:
+		return true
+	case SendDocumentJSONBodyCurrencySGD:
+		return true
+	case SendDocumentJSONBodyCurrencyUSD:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SendDocumentJSONBodyType.
 const (
 	SendDocumentJSONBodyTypeCreditNote SendDocumentJSONBodyType = "credit_note"
@@ -715,6 +829,63 @@ func (e SendDocumentJSONBodyType) Valid() bool {
 	case SendDocumentJSONBodyTypeCreditNote:
 		return true
 	case SendDocumentJSONBodyTypeInvoice:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SendDocumentBatchJSONBodyCurrency.
+const (
+	SendDocumentBatchJSONBodyCurrencyAUD SendDocumentBatchJSONBodyCurrency = "AUD"
+	SendDocumentBatchJSONBodyCurrencyCAD SendDocumentBatchJSONBodyCurrency = "CAD"
+	SendDocumentBatchJSONBodyCurrencyCHF SendDocumentBatchJSONBodyCurrency = "CHF"
+	SendDocumentBatchJSONBodyCurrencyCNY SendDocumentBatchJSONBodyCurrency = "CNY"
+	SendDocumentBatchJSONBodyCurrencyDKK SendDocumentBatchJSONBodyCurrency = "DKK"
+	SendDocumentBatchJSONBodyCurrencyEUR SendDocumentBatchJSONBodyCurrency = "EUR"
+	SendDocumentBatchJSONBodyCurrencyGBP SendDocumentBatchJSONBodyCurrency = "GBP"
+	SendDocumentBatchJSONBodyCurrencyHKD SendDocumentBatchJSONBodyCurrency = "HKD"
+	SendDocumentBatchJSONBodyCurrencyINR SendDocumentBatchJSONBodyCurrency = "INR"
+	SendDocumentBatchJSONBodyCurrencyJPY SendDocumentBatchJSONBodyCurrency = "JPY"
+	SendDocumentBatchJSONBodyCurrencyNOK SendDocumentBatchJSONBodyCurrency = "NOK"
+	SendDocumentBatchJSONBodyCurrencyNZD SendDocumentBatchJSONBodyCurrency = "NZD"
+	SendDocumentBatchJSONBodyCurrencySEK SendDocumentBatchJSONBodyCurrency = "SEK"
+	SendDocumentBatchJSONBodyCurrencySGD SendDocumentBatchJSONBodyCurrency = "SGD"
+	SendDocumentBatchJSONBodyCurrencyUSD SendDocumentBatchJSONBodyCurrency = "USD"
+)
+
+// Valid indicates whether the value is a known member of the SendDocumentBatchJSONBodyCurrency enum.
+func (e SendDocumentBatchJSONBodyCurrency) Valid() bool {
+	switch e {
+	case SendDocumentBatchJSONBodyCurrencyAUD:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyCAD:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyCHF:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyCNY:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyDKK:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyEUR:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyGBP:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyHKD:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyINR:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyJPY:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyNOK:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyNZD:
+		return true
+	case SendDocumentBatchJSONBodyCurrencySEK:
+		return true
+	case SendDocumentBatchJSONBodyCurrencySGD:
+		return true
+	case SendDocumentBatchJSONBodyCurrencyUSD:
 		return true
 	default:
 		return false
@@ -796,6 +967,63 @@ func (e LookupParticipantDnsParamsDomain) Valid() bool {
 	case LookupParticipantDnsParamsDomainSmk:
 		return true
 	case LookupParticipantDnsParamsDomainSml:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ValidateDocumentJSONBodyCurrency.
+const (
+	ValidateDocumentJSONBodyCurrencyAUD ValidateDocumentJSONBodyCurrency = "AUD"
+	ValidateDocumentJSONBodyCurrencyCAD ValidateDocumentJSONBodyCurrency = "CAD"
+	ValidateDocumentJSONBodyCurrencyCHF ValidateDocumentJSONBodyCurrency = "CHF"
+	ValidateDocumentJSONBodyCurrencyCNY ValidateDocumentJSONBodyCurrency = "CNY"
+	ValidateDocumentJSONBodyCurrencyDKK ValidateDocumentJSONBodyCurrency = "DKK"
+	ValidateDocumentJSONBodyCurrencyEUR ValidateDocumentJSONBodyCurrency = "EUR"
+	ValidateDocumentJSONBodyCurrencyGBP ValidateDocumentJSONBodyCurrency = "GBP"
+	ValidateDocumentJSONBodyCurrencyHKD ValidateDocumentJSONBodyCurrency = "HKD"
+	ValidateDocumentJSONBodyCurrencyINR ValidateDocumentJSONBodyCurrency = "INR"
+	ValidateDocumentJSONBodyCurrencyJPY ValidateDocumentJSONBodyCurrency = "JPY"
+	ValidateDocumentJSONBodyCurrencyNOK ValidateDocumentJSONBodyCurrency = "NOK"
+	ValidateDocumentJSONBodyCurrencyNZD ValidateDocumentJSONBodyCurrency = "NZD"
+	ValidateDocumentJSONBodyCurrencySEK ValidateDocumentJSONBodyCurrency = "SEK"
+	ValidateDocumentJSONBodyCurrencySGD ValidateDocumentJSONBodyCurrency = "SGD"
+	ValidateDocumentJSONBodyCurrencyUSD ValidateDocumentJSONBodyCurrency = "USD"
+)
+
+// Valid indicates whether the value is a known member of the ValidateDocumentJSONBodyCurrency enum.
+func (e ValidateDocumentJSONBodyCurrency) Valid() bool {
+	switch e {
+	case ValidateDocumentJSONBodyCurrencyAUD:
+		return true
+	case ValidateDocumentJSONBodyCurrencyCAD:
+		return true
+	case ValidateDocumentJSONBodyCurrencyCHF:
+		return true
+	case ValidateDocumentJSONBodyCurrencyCNY:
+		return true
+	case ValidateDocumentJSONBodyCurrencyDKK:
+		return true
+	case ValidateDocumentJSONBodyCurrencyEUR:
+		return true
+	case ValidateDocumentJSONBodyCurrencyGBP:
+		return true
+	case ValidateDocumentJSONBodyCurrencyHKD:
+		return true
+	case ValidateDocumentJSONBodyCurrencyINR:
+		return true
+	case ValidateDocumentJSONBodyCurrencyJPY:
+		return true
+	case ValidateDocumentJSONBodyCurrencyNOK:
+		return true
+	case ValidateDocumentJSONBodyCurrencyNZD:
+		return true
+	case ValidateDocumentJSONBodyCurrencySEK:
+		return true
+	case ValidateDocumentJSONBodyCurrencySGD:
+		return true
+	case ValidateDocumentJSONBodyCurrencyUSD:
 		return true
 	default:
 		return false
@@ -1264,11 +1492,14 @@ type Document struct {
 
 	// BuyerReference Buyer reference (BT-10). Present only when the document was
 	// created with one.
-	BuyerReference *string             `json:"buyer_reference,omitempty"`
-	CreatedAt      *time.Time          `json:"created_at,omitempty"`
-	Currency       *string             `json:"currency,omitempty"`
-	DeliveredAt    *time.Time          `json:"delivered_at,omitempty"`
-	DueDate        *openapi_types.Date `json:"due_date,omitempty"`
+	BuyerReference *string    `json:"buyer_reference,omitempty"`
+	CreatedAt      *time.Time `json:"created_at,omitempty"`
+
+	// Currency ISO 4217 currency code of the document, in upper case. A document
+	// created before `currency` was checked can hold another value.
+	Currency    *string             `json:"currency,omitempty"`
+	DeliveredAt *time.Time          `json:"delivered_at,omitempty"`
+	DueDate     *openapi_types.Date `json:"due_date,omitempty"`
 
 	// From Resolved party identity as stored on a sent document. `email` and
 	// `contact_name` are present only when the document was created with
@@ -1393,9 +1624,15 @@ type DocumentCreate struct {
 	// Charges Document-level charges (BG-21) — additions applied before tax.
 	Charges *[]AllowanceCharge `json:"charges,omitempty"`
 
-	// Currency ISO 4217 currency code
-	Currency *string             `json:"currency,omitempty"`
-	DueDate  *openapi_types.Date `json:"due_date,omitempty"`
+	// Currency ISO 4217 currency code of the document. It must be one of the
+	// listed codes. Letter case and spaces around the code are ignored;
+	// the code is stored and sent in upper case (`eur` becomes `EUR`).
+	// Any other value is refused with a 422 before the charge:
+	// `unsupported_currency` for an ISO 4217 code that cannot be sent
+	// (for example `PLN`), `invalid_field` for a value that is no
+	// currency code. `param` is `currency`.
+	Currency *DocumentCreateCurrency `json:"currency,omitempty"`
+	DueDate  *openapi_types.Date     `json:"due_date,omitempty"`
 
 	// From A sender or recipient party on a document. A party needs a `tax_id`,
 	// a `peppol_id`, or both.
@@ -1478,6 +1715,15 @@ type DocumentCreate struct {
 	VatexNote *string `json:"vatex_note,omitempty"`
 }
 
+// DocumentCreateCurrency ISO 4217 currency code of the document. It must be one of the
+// listed codes. Letter case and spaces around the code are ignored;
+// the code is stored and sent in upper case (`eur` becomes `EUR`).
+// Any other value is refused with a 422 before the charge:
+// `unsupported_currency` for an ISO 4217 code that cannot be sent
+// (for example `PLN`), `invalid_field` for a value that is no
+// currency code. `param` is `currency`.
+type DocumentCreateCurrency string
+
 // DocumentCreateType defines model for DocumentCreate.Type.
 type DocumentCreateType string
 
@@ -1494,11 +1740,14 @@ type DocumentDetail struct {
 
 	// BuyerReference Buyer reference (BT-10). Present only when the document was
 	// created with one.
-	BuyerReference *string             `json:"buyer_reference,omitempty"`
-	CreatedAt      *time.Time          `json:"created_at,omitempty"`
-	Currency       *string             `json:"currency,omitempty"`
-	DeliveredAt    *time.Time          `json:"delivered_at,omitempty"`
-	DueDate        *openapi_types.Date `json:"due_date,omitempty"`
+	BuyerReference *string    `json:"buyer_reference,omitempty"`
+	CreatedAt      *time.Time `json:"created_at,omitempty"`
+
+	// Currency ISO 4217 currency code of the document, in upper case. A document
+	// created before `currency` was checked can hold another value.
+	Currency    *string             `json:"currency,omitempty"`
+	DeliveredAt *time.Time          `json:"delivered_at,omitempty"`
+	DueDate     *openapi_types.Date `json:"due_date,omitempty"`
 
 	// Events The status changes of the document, oldest first.
 	Events []DocumentEvent `json:"events"`
@@ -1625,6 +1874,7 @@ type DocumentStatus string
 // | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
 // | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
 // | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
+// | validation_error | `unsupported_currency` | 422 — `currency` of a document is an ISO 4217 code that cannot be sent. `param` is `currency` (`<index>.currency` in a batch). The message lists the accepted codes. A value that is no currency code gets `invalid_field`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2527,6 +2777,7 @@ type IdempotencyKey = string
 // | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
 // | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
 // | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
+// | validation_error | `unsupported_currency` | 422 — `currency` of a document is an ISO 4217 code that cannot be sent. `param` is `currency` (`<index>.currency` in a batch). The message lists the accepted codes. A value that is no currency code gets `invalid_field`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2609,6 +2860,7 @@ type BadRequest = ErrorObject
 // | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
 // | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
 // | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
+// | validation_error | `unsupported_currency` | 422 — `currency` of a document is an ISO 4217 code that cannot be sent. `param` is `currency` (`<index>.currency` in a batch). The message lists the accepted codes. A value that is no currency code gets `invalid_field`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2691,6 +2943,7 @@ type Forbidden = ErrorObject
 // | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
 // | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
 // | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
+// | validation_error | `unsupported_currency` | 422 — `currency` of a document is an ISO 4217 code that cannot be sent. `param` is `currency` (`<index>.currency` in a batch). The message lists the accepted codes. A value that is no currency code gets `invalid_field`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2773,6 +3026,7 @@ type NotFound = ErrorObject
 // | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
 // | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
 // | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
+// | validation_error | `unsupported_currency` | 422 — `currency` of a document is an ISO 4217 code that cannot be sent. `param` is `currency` (`<index>.currency` in a batch). The message lists the accepted codes. A value that is no currency code gets `invalid_field`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2855,6 +3109,7 @@ type PaymentRequired = ErrorObject
 // | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
 // | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
 // | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
+// | validation_error | `unsupported_currency` | 422 — `currency` of a document is an ISO 4217 code that cannot be sent. `param` is `currency` (`<index>.currency` in a batch). The message lists the accepted codes. A value that is no currency code gets `invalid_field`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -2937,6 +3192,7 @@ type RateLimited = ErrorObject
 // | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
 // | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
 // | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
+// | validation_error | `unsupported_currency` | 422 — `currency` of a document is an ISO 4217 code that cannot be sent. `param` is `currency` (`<index>.currency` in a batch). The message lists the accepted codes. A value that is no currency code gets `invalid_field`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -3019,6 +3275,7 @@ type Unauthenticated = ErrorObject
 // | validation_error | `amount_due_exceeds_total` | 422 — `amount_due` is more than the document total with VAT plus `rounding_amount`. |
 // | validation_error | `amount_due_excludes_rounding` | 422 — `amount_due` equals the document total with VAT, but the document has a positive `rounding_amount`. |
 // | validation_error | `rounding_amount_out_of_range` | 422 — `rounding_amount` is `1.00` or more either way, or takes the document total below `0`. |
+// | validation_error | `unsupported_currency` | 422 — `currency` of a document is an ISO 4217 code that cannot be sent. `param` is `currency` (`<index>.currency` in a batch). The message lists the accepted codes. A value that is no currency code gets `invalid_field`. |
 // | validation_error | `batch_too_large` | Batch contains more than 100 documents. |
 // | validation_error | `mixed_company_ids` | Batch mixes multiple `company_id`s. |
 // | validation_error | `idempotency_key_mismatch` | The `Idempotency-Key` header and the `idempotency_key` body field carry different keys. |
@@ -3148,9 +3405,15 @@ type SendDocumentJSONBody struct {
 	// CompanyId ID of the company sending this document
 	CompanyId string `json:"company_id"`
 
-	// Currency ISO 4217 currency code
-	Currency *string             `json:"currency,omitempty"`
-	DueDate  *openapi_types.Date `json:"due_date,omitempty"`
+	// Currency ISO 4217 currency code of the document. It must be one of the
+	// listed codes. Letter case and spaces around the code are ignored;
+	// the code is stored and sent in upper case (`eur` becomes `EUR`).
+	// Any other value is refused with a 422 before the charge:
+	// `unsupported_currency` for an ISO 4217 code that cannot be sent
+	// (for example `PLN`), `invalid_field` for a value that is no
+	// currency code. `param` is `currency`.
+	Currency *SendDocumentJSONBodyCurrency `json:"currency,omitempty"`
+	DueDate  *openapi_types.Date           `json:"due_date,omitempty"`
 
 	// From A sender or recipient party on a document. A party needs a `tax_id`,
 	// a `peppol_id`, or both.
@@ -3245,6 +3508,9 @@ type SendDocumentParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// SendDocumentJSONBodyCurrency defines parameters for SendDocument.
+type SendDocumentJSONBodyCurrency string
+
 // SendDocumentJSONBodyType defines parameters for SendDocument.
 type SendDocumentJSONBodyType string
 
@@ -3282,9 +3548,15 @@ type SendDocumentBatchJSONBody = []struct {
 	Charges   *[]AllowanceCharge `json:"charges,omitempty"`
 	CompanyId string             `json:"company_id"`
 
-	// Currency ISO 4217 currency code
-	Currency *string             `json:"currency,omitempty"`
-	DueDate  *openapi_types.Date `json:"due_date,omitempty"`
+	// Currency ISO 4217 currency code of the document. It must be one of the
+	// listed codes. Letter case and spaces around the code are ignored;
+	// the code is stored and sent in upper case (`eur` becomes `EUR`).
+	// Any other value is refused with a 422 before the charge:
+	// `unsupported_currency` for an ISO 4217 code that cannot be sent
+	// (for example `PLN`), `invalid_field` for a value that is no
+	// currency code. `param` is `currency`.
+	Currency *SendDocumentBatchJSONBodyCurrency `json:"currency,omitempty"`
+	DueDate  *openapi_types.Date                `json:"due_date,omitempty"`
 
 	// From A sender or recipient party on a document. A party needs a `tax_id`,
 	// a `peppol_id`, or both.
@@ -3366,6 +3638,9 @@ type SendDocumentBatchJSONBody = []struct {
 	// VatexNote VAT exemption reason text (BT-120). Applies at document level only.
 	VatexNote *string `json:"vatex_note,omitempty"`
 }
+
+// SendDocumentBatchJSONBodyCurrency defines parameters for SendDocumentBatch.
+type SendDocumentBatchJSONBodyCurrency string
 
 // SendDocumentBatchJSONBodyType defines parameters for SendDocumentBatch.
 type SendDocumentBatchJSONBodyType string
@@ -3473,9 +3748,15 @@ type ValidateDocumentJSONBody struct {
 	// CompanyId Company whose provider credentials should validate this document.
 	CompanyId string `json:"company_id"`
 
-	// Currency ISO 4217 currency code
-	Currency *string             `json:"currency,omitempty"`
-	DueDate  *openapi_types.Date `json:"due_date,omitempty"`
+	// Currency ISO 4217 currency code of the document. It must be one of the
+	// listed codes. Letter case and spaces around the code are ignored;
+	// the code is stored and sent in upper case (`eur` becomes `EUR`).
+	// Any other value is refused with a 422 before the charge:
+	// `unsupported_currency` for an ISO 4217 code that cannot be sent
+	// (for example `PLN`), `invalid_field` for a value that is no
+	// currency code. `param` is `currency`.
+	Currency *ValidateDocumentJSONBodyCurrency `json:"currency,omitempty"`
+	DueDate  *openapi_types.Date               `json:"due_date,omitempty"`
 
 	// From A sender or recipient party on a document. A party needs a `tax_id`,
 	// a `peppol_id`, or both.
@@ -3568,6 +3849,9 @@ type ValidateDocumentMultipartBody struct {
 	// `text/xml`, or as `application/octet-stream`.
 	File openapi_types.File `json:"file"`
 }
+
+// ValidateDocumentJSONBodyCurrency defines parameters for ValidateDocument.
+type ValidateDocumentJSONBodyCurrency string
 
 // ValidateDocumentJSONBodyType defines parameters for ValidateDocument.
 type ValidateDocumentJSONBodyType string
@@ -4160,6 +4444,9 @@ type ClientInterface interface {
 	// object with the code `sender_not_registered` in the response array,
 	// as in `POST /v1/documents`. It does not cost a credit.
 	//
+	// A `currency` that cannot be sent in one document refuses the whole
+	// batch with a 422, before any charge.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /v1/documents/batch (the `SendDocumentBatch` operationId).
@@ -4182,6 +4469,9 @@ type ClientInterface interface {
 	// An item whose sender in `from` is not the company gets an error
 	// object with the code `sender_not_registered` in the response array,
 	// as in `POST /v1/documents`. It does not cost a credit.
+	//
+	// A `currency` that cannot be sent in one document refuses the whole
+	// batch with a 422, before any charge.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -4478,6 +4768,10 @@ type ClientInterface interface {
 	// with `path` `from.peppol_id` or `from.tax_id` and `code`
 	// `sender_not_registered`.
 	//
+	// A `currency` that `POST /v1/documents` refuses gives `valid: false`
+	// and an entry in `errors` with `path` `currency` and `code`
+	// `unsupported_currency` or `invalid_field`.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -4507,6 +4801,10 @@ type ClientInterface interface {
 	// that is not the company gives `valid: false` and an entry in `errors`
 	// with `path` `from.peppol_id` or `from.tax_id` and `code`
 	// `sender_not_registered`.
+	//
+	// A `currency` that `POST /v1/documents` refuses gives `valid: false`
+	// and an entry in `errors` with `path` `currency` and `code`
+	// `unsupported_currency` or `invalid_field`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -5263,6 +5561,9 @@ func (c *Client) SendDocument(ctx context.Context, params *SendDocumentParams, b
 // object with the code `sender_not_registered` in the response array,
 // as in `POST /v1/documents`. It does not cost a credit.
 //
+// A `currency` that cannot be sent in one document refuses the whole
+// batch with a 422, before any charge.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /v1/documents/batch (the `SendDocumentBatch` operationId).
@@ -5295,6 +5596,9 @@ func (c *Client) SendDocumentBatchWithBody(ctx context.Context, contentType stri
 // An item whose sender in `from` is not the company gets an error
 // object with the code `sender_not_registered` in the response array,
 // as in `POST /v1/documents`. It does not cost a credit.
+//
+// A `currency` that cannot be sent in one document refuses the whole
+// batch with a 422, before any charge.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -5761,6 +6065,10 @@ func (c *Client) Signup(ctx context.Context, body SignupJSONRequestBody, reqEdit
 // with `path` `from.peppol_id` or `from.tax_id` and `code`
 // `sender_not_registered`.
 //
+// A `currency` that `POST /v1/documents` refuses gives `valid: false`
+// and an entry in `errors` with `path` `currency` and `code`
+// `unsupported_currency` or `invalid_field`.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -5800,6 +6108,10 @@ func (c *Client) ValidateDocumentWithBody(ctx context.Context, contentType strin
 // that is not the company gives `valid: false` and an entry in `errors`
 // with `path` `from.peppol_id` or `from.tax_id` and `code`
 // `sender_not_registered`.
+//
+// A `currency` that `POST /v1/documents` refuses gives `valid: false`
+// and an entry in `errors` with `path` `currency` and `code`
+// `unsupported_currency` or `invalid_field`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -8736,6 +9048,9 @@ type ClientWithResponsesInterface interface {
 	// object with the code `sender_not_registered` in the response array,
 	// as in `POST /v1/documents`. It does not cost a credit.
 	//
+	// A `currency` that cannot be sent in one document refuses the whole
+	// batch with a 422, before any charge.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /v1/documents/batch (the `SendDocumentBatch` operationId).
@@ -8758,6 +9073,9 @@ type ClientWithResponsesInterface interface {
 	// An item whose sender in `from` is not the company gets an error
 	// object with the code `sender_not_registered` in the response array,
 	// as in `POST /v1/documents`. It does not cost a credit.
+	//
+	// A `currency` that cannot be sent in one document refuses the whole
+	// batch with a 422, before any charge.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -9074,6 +9392,10 @@ type ClientWithResponsesInterface interface {
 	// with `path` `from.peppol_id` or `from.tax_id` and `code`
 	// `sender_not_registered`.
 	//
+	// A `currency` that `POST /v1/documents` refuses gives `valid: false`
+	// and an entry in `errors` with `path` `currency` and `code`
+	// `unsupported_currency` or `invalid_field`.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -9103,6 +9425,10 @@ type ClientWithResponsesInterface interface {
 	// that is not the company gives `valid: false` and an entry in `errors`
 	// with `path` `from.peppol_id` or `from.tax_id` and `code`
 	// `sender_not_registered`.
+	//
+	// A `currency` that `POST /v1/documents` refuses gives `valid: false`
+	// and an entry in `errors` with `path` `currency` and `code`
+	// `unsupported_currency` or `invalid_field`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -10259,6 +10585,8 @@ type SendDocumentBatchResp struct {
 	JSON401 *Unauthorized
 	// JSON402 the response for an HTTP 402 `application/json` response
 	JSON402 *PaymentRequired
+	// JSON422 the response for an HTTP 422 `application/json` response
+	JSON422 *ErrorObject
 	// JSON429 the response for an HTTP 429 `application/json` response
 	JSON429 *RateLimited
 	// Headers401 the parsed response headers for an HTTP 401 response
@@ -10285,6 +10613,11 @@ func (r SendDocumentBatchResp) GetJSON401() *Unauthorized {
 // GetJSON402 returns the response for an HTTP 402 `application/json` response
 func (r SendDocumentBatchResp) GetJSON402() *PaymentRequired {
 	return r.JSON402
+}
+
+// GetJSON422 returns the response for an HTTP 422 `application/json` response
+func (r SendDocumentBatchResp) GetJSON422() *ErrorObject {
+	return r.JSON422
 }
 
 // GetJSON429 returns the response for an HTTP 429 `application/json` response
@@ -12856,6 +13189,9 @@ func (c *ClientWithResponses) SendDocumentWithResponse(ctx context.Context, para
 // object with the code `sender_not_registered` in the response array,
 // as in `POST /v1/documents`. It does not cost a credit.
 //
+// A `currency` that cannot be sent in one document refuses the whole
+// batch with a 422, before any charge.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /v1/documents/batch (the `SendDocumentBatch` operationId).
@@ -12884,6 +13220,9 @@ func (c *ClientWithResponses) SendDocumentBatchWithBodyWithResponse(ctx context.
 // An item whose sender in `from` is not the company gets an error
 // object with the code `sender_not_registered` in the response array,
 // as in `POST /v1/documents`. It does not cost a credit.
+//
+// A `currency` that cannot be sent in one document refuses the whole
+// batch with a 422, before any charge.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -13302,6 +13641,10 @@ func (c *ClientWithResponses) SignupWithResponse(ctx context.Context, body Signu
 // with `path` `from.peppol_id` or `from.tax_id` and `code`
 // `sender_not_registered`.
 //
+// A `currency` that `POST /v1/documents` refuses gives `valid: false`
+// and an entry in `errors` with `path` `currency` and `code`
+// `unsupported_currency` or `invalid_field`.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -13337,6 +13680,10 @@ func (c *ClientWithResponses) ValidateDocumentWithBodyWithResponse(ctx context.C
 // that is not the company gives `valid: false` and an entry in `errors`
 // with `path` `from.peppol_id` or `from.tax_id` and `code`
 // `sender_not_registered`.
+//
+// A `currency` that `POST /v1/documents` refuses gives `valid: false`
+// and an entry in `errors` with `path` `currency` and `code`
+// `unsupported_currency` or `invalid_field`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -14536,6 +14883,13 @@ func ParseSendDocumentBatchResp(rsp *http.Response) (*SendDocumentBatchResp, err
 			return nil, err
 		}
 		response.JSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ErrorObject
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
 		var dest RateLimited
