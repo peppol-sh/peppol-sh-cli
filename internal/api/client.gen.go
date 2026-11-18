@@ -1208,7 +1208,19 @@ type AccountStatus string
 type Address struct {
 	City *string `json:"city,omitempty"`
 
-	// Country ISO 3166-1 alpha-2 country code
+	// Country ISO 3166-1 alpha-2 country code (e.g. `BE`). It is the postal
+	// country of the party in the document (BT-40 for `from`, BT-55 for
+	// `to`), sent in upper case. When it is left out or is no two-letter
+	// code, the country is the prefix of the VAT number in `tax_id`
+	// (the Greek `EL` gives `GR`), else the country of the `peppol_id`
+	// scheme (e.g. `0208` gives `BE`, `0192` gives `NO`; a `scheme:id`
+	// in `tax_id` counts too). A scheme that is not of one country (`0088` GLN, `0060`
+	// DUNS) gives none. For `from` with no `peppol_id`, the Peppol ID
+	// of the company counts. When no country follows for `from` or
+	// `to`, the document is rejected with `party_country_required`
+	// (422): with a `ps_test_` key now, with a `ps_live_` key after a
+	// warning period. Until then a `ps_live_` key sends the document
+	// with the country `BE`.
 	Country    *string `json:"country,omitempty"`
 	PostalCode *string `json:"postal_code,omitempty"`
 	Street     *string `json:"street,omitempty"`
@@ -1868,6 +1880,7 @@ type DocumentStatus string
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
+// | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2615,7 +2628,8 @@ type UsageResponse struct {
 type ValidationIssue struct {
 	// Code Machine-readable issue code: the Peppol validation rule id (e.g.
 	// `BR-S-02`), our own code for a request body issue (e.g.
-	// `invalid_document_body`, `sender_not_registered`), or
+	// `invalid_document_body`, `sender_not_registered`,
+	// `party_country_required`), or
 	// `invalid_document` when the provider rejects the document without
 	// a rule id.
 	Code *string `json:"code,omitempty"`
@@ -2793,6 +2807,7 @@ type IdempotencyKey = string
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
+// | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2876,6 +2891,7 @@ type BadRequest = ErrorObject
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
+// | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2959,6 +2975,7 @@ type Forbidden = ErrorObject
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
+// | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3042,6 +3059,7 @@ type NotFound = ErrorObject
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
+// | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3125,6 +3143,7 @@ type PaymentRequired = ErrorObject
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
+// | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3208,6 +3227,7 @@ type RateLimited = ErrorObject
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
+// | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3291,6 +3311,7 @@ type Unauthenticated = ErrorObject
 // | validation_error | `peppol_id_country_mismatch` | 400 — the Peppol ID scheme belongs to another country than the company. |
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
+// | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -4411,6 +4432,15 @@ type ClientInterface interface {
 	// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
 	// sends as the company. See Sandbox in the introduction for the rule.
 	//
+	// The sender and the receiver each need a postal country: from
+	// `address.country`, else from the VAT number in `tax_id`, else from
+	// the `peppol_id` scheme. If no country follows, a `ps_test_` key gets
+	// a `422` with the code `party_country_required` and `param`
+	// `from.address.country` or `to.address.country`. No credit is
+	// charged, no document is made. A `ps_live_` key does not get this
+	// `422` yet: for a warning period the document is accepted and goes
+	// out with the country `BE`. After that period it gets the same `422`.
+	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
 	//
@@ -4440,6 +4470,15 @@ type ClientInterface interface {
 	// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
 	// sends as the company. See Sandbox in the introduction for the rule.
 	//
+	// The sender and the receiver each need a postal country: from
+	// `address.country`, else from the VAT number in `tax_id`, else from
+	// the `peppol_id` scheme. If no country follows, a `ps_test_` key gets
+	// a `422` with the code `party_country_required` and `param`
+	// `from.address.country` or `to.address.country`. No credit is
+	// charged, no document is made. A `ps_live_` key does not get this
+	// `422` yet: for a warning period the document is accepted and goes
+	// out with the country `BE`. After that period it gets the same `422`.
+	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
 	//
@@ -4466,6 +4505,12 @@ type ClientInterface interface {
 	// object with the code `sender_not_registered` in the response array,
 	// as in `POST /v1/documents`. It does not cost a credit.
 	//
+	// An item with no postal country for the sender or the receiver gets
+	// an error object with the code `party_country_required` in the
+	// response array, as in `POST /v1/documents`: with a `ps_test_` key
+	// now, with a `ps_live_` key after the warning period. It does not
+	// cost a credit.
+	//
 	// A `currency` that cannot be sent in one document refuses the whole
 	// batch with a 422, before any charge.
 	//
@@ -4491,6 +4536,12 @@ type ClientInterface interface {
 	// An item whose sender in `from` is not the company gets an error
 	// object with the code `sender_not_registered` in the response array,
 	// as in `POST /v1/documents`. It does not cost a credit.
+	//
+	// An item with no postal country for the sender or the receiver gets
+	// an error object with the code `party_country_required` in the
+	// response array, as in `POST /v1/documents`: with a `ps_test_` key
+	// now, with a `ps_live_` key after the warning period. It does not
+	// cost a credit.
 	//
 	// A `currency` that cannot be sent in one document refuses the whole
 	// batch with a 422, before any charge.
@@ -4794,6 +4845,14 @@ type ClientInterface interface {
 	// and an entry in `errors` with `path` `currency` and `code`
 	// `unsupported_currency` or `invalid_field`.
 	//
+	// The postal country of the sender and of the receiver is checked as in
+	// `POST /v1/documents`. When no country follows, a `ps_test_` key gets
+	// `valid: false` and an entry in `errors` with `path`
+	// `from.address.country` or `to.address.country` and `code`
+	// `party_country_required`. A `ps_live_` key gets the result of the
+	// other checks and the same entry in `warnings`, until the warning
+	// period ends.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -4827,6 +4886,14 @@ type ClientInterface interface {
 	// A `currency` that `POST /v1/documents` refuses gives `valid: false`
 	// and an entry in `errors` with `path` `currency` and `code`
 	// `unsupported_currency` or `invalid_field`.
+	//
+	// The postal country of the sender and of the receiver is checked as in
+	// `POST /v1/documents`. When no country follows, a `ps_test_` key gets
+	// `valid: false` and an entry in `errors` with `path`
+	// `from.address.country` or `to.address.country` and `code`
+	// `party_country_required`. A `ps_live_` key gets the result of the
+	// other checks and the same entry in `warnings`, until the warning
+	// period ends.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -5508,6 +5575,15 @@ func (c *Client) ListDocuments(ctx context.Context, params *ListDocumentsParams,
 // with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
 // sends as the company. See Sandbox in the introduction for the rule.
 //
+// The sender and the receiver each need a postal country: from
+// `address.country`, else from the VAT number in `tax_id`, else from
+// the `peppol_id` scheme. If no country follows, a `ps_test_` key gets
+// a `422` with the code `party_country_required` and `param`
+// `from.address.country` or `to.address.country`. No credit is
+// charged, no document is made. A `ps_live_` key does not get this
+// `422` yet: for a warning period the document is accepted and goes
+// out with the country `BE`. After that period it gets the same `422`.
+//
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
 //
@@ -5547,6 +5623,15 @@ func (c *Client) SendDocumentWithBody(ctx context.Context, params *SendDocumentP
 // with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
 // sends as the company. See Sandbox in the introduction for the rule.
 //
+// The sender and the receiver each need a postal country: from
+// `address.country`, else from the VAT number in `tax_id`, else from
+// the `peppol_id` scheme. If no country follows, a `ps_test_` key gets
+// a `422` with the code `party_country_required` and `param`
+// `from.address.country` or `to.address.country`. No credit is
+// charged, no document is made. A `ps_live_` key does not get this
+// `422` yet: for a warning period the document is accepted and goes
+// out with the country `BE`. After that period it gets the same `422`.
+//
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
 //
@@ -5583,6 +5668,12 @@ func (c *Client) SendDocument(ctx context.Context, params *SendDocumentParams, b
 // object with the code `sender_not_registered` in the response array,
 // as in `POST /v1/documents`. It does not cost a credit.
 //
+// An item with no postal country for the sender or the receiver gets
+// an error object with the code `party_country_required` in the
+// response array, as in `POST /v1/documents`: with a `ps_test_` key
+// now, with a `ps_live_` key after the warning period. It does not
+// cost a credit.
+//
 // A `currency` that cannot be sent in one document refuses the whole
 // batch with a 422, before any charge.
 //
@@ -5618,6 +5709,12 @@ func (c *Client) SendDocumentBatchWithBody(ctx context.Context, contentType stri
 // An item whose sender in `from` is not the company gets an error
 // object with the code `sender_not_registered` in the response array,
 // as in `POST /v1/documents`. It does not cost a credit.
+//
+// An item with no postal country for the sender or the receiver gets
+// an error object with the code `party_country_required` in the
+// response array, as in `POST /v1/documents`: with a `ps_test_` key
+// now, with a `ps_live_` key after the warning period. It does not
+// cost a credit.
 //
 // A `currency` that cannot be sent in one document refuses the whole
 // batch with a 422, before any charge.
@@ -6091,6 +6188,14 @@ func (c *Client) Signup(ctx context.Context, body SignupJSONRequestBody, reqEdit
 // and an entry in `errors` with `path` `currency` and `code`
 // `unsupported_currency` or `invalid_field`.
 //
+// The postal country of the sender and of the receiver is checked as in
+// `POST /v1/documents`. When no country follows, a `ps_test_` key gets
+// `valid: false` and an entry in `errors` with `path`
+// `from.address.country` or `to.address.country` and `code`
+// `party_country_required`. A `ps_live_` key gets the result of the
+// other checks and the same entry in `warnings`, until the warning
+// period ends.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -6134,6 +6239,14 @@ func (c *Client) ValidateDocumentWithBody(ctx context.Context, contentType strin
 // A `currency` that `POST /v1/documents` refuses gives `valid: false`
 // and an entry in `errors` with `path` `currency` and `code`
 // `unsupported_currency` or `invalid_field`.
+//
+// The postal country of the sender and of the receiver is checked as in
+// `POST /v1/documents`. When no country follows, a `ps_test_` key gets
+// `valid: false` and an entry in `errors` with `path`
+// `from.address.country` or `to.address.country` and `code`
+// `party_country_required`. A `ps_live_` key gets the result of the
+// other checks and the same entry in `warnings`, until the warning
+// period ends.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -9015,6 +9128,15 @@ type ClientWithResponsesInterface interface {
 	// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
 	// sends as the company. See Sandbox in the introduction for the rule.
 	//
+	// The sender and the receiver each need a postal country: from
+	// `address.country`, else from the VAT number in `tax_id`, else from
+	// the `peppol_id` scheme. If no country follows, a `ps_test_` key gets
+	// a `422` with the code `party_country_required` and `param`
+	// `from.address.country` or `to.address.country`. No credit is
+	// charged, no document is made. A `ps_live_` key does not get this
+	// `422` yet: for a warning period the document is accepted and goes
+	// out with the country `BE`. After that period it gets the same `422`.
+	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
 	//
@@ -9044,6 +9166,15 @@ type ClientWithResponsesInterface interface {
 	// with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
 	// sends as the company. See Sandbox in the introduction for the rule.
 	//
+	// The sender and the receiver each need a postal country: from
+	// `address.country`, else from the VAT number in `tax_id`, else from
+	// the `peppol_id` scheme. If no country follows, a `ps_test_` key gets
+	// a `422` with the code `party_country_required` and `param`
+	// `from.address.country` or `to.address.country`. No credit is
+	// charged, no document is made. A `ps_live_` key does not get this
+	// `422` yet: for a warning period the document is accepted and goes
+	// out with the country `BE`. After that period it gets the same `422`.
+	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
 	//
@@ -9070,6 +9201,12 @@ type ClientWithResponsesInterface interface {
 	// object with the code `sender_not_registered` in the response array,
 	// as in `POST /v1/documents`. It does not cost a credit.
 	//
+	// An item with no postal country for the sender or the receiver gets
+	// an error object with the code `party_country_required` in the
+	// response array, as in `POST /v1/documents`: with a `ps_test_` key
+	// now, with a `ps_live_` key after the warning period. It does not
+	// cost a credit.
+	//
 	// A `currency` that cannot be sent in one document refuses the whole
 	// batch with a 422, before any charge.
 	//
@@ -9095,6 +9232,12 @@ type ClientWithResponsesInterface interface {
 	// An item whose sender in `from` is not the company gets an error
 	// object with the code `sender_not_registered` in the response array,
 	// as in `POST /v1/documents`. It does not cost a credit.
+	//
+	// An item with no postal country for the sender or the receiver gets
+	// an error object with the code `party_country_required` in the
+	// response array, as in `POST /v1/documents`: with a `ps_test_` key
+	// now, with a `ps_live_` key after the warning period. It does not
+	// cost a credit.
 	//
 	// A `currency` that cannot be sent in one document refuses the whole
 	// batch with a 422, before any charge.
@@ -9418,6 +9561,14 @@ type ClientWithResponsesInterface interface {
 	// and an entry in `errors` with `path` `currency` and `code`
 	// `unsupported_currency` or `invalid_field`.
 	//
+	// The postal country of the sender and of the receiver is checked as in
+	// `POST /v1/documents`. When no country follows, a `ps_test_` key gets
+	// `valid: false` and an entry in `errors` with `path`
+	// `from.address.country` or `to.address.country` and `code`
+	// `party_country_required`. A `ps_live_` key gets the result of the
+	// other checks and the same entry in `warnings`, until the warning
+	// period ends.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -9451,6 +9602,14 @@ type ClientWithResponsesInterface interface {
 	// A `currency` that `POST /v1/documents` refuses gives `valid: false`
 	// and an entry in `errors` with `path` `currency` and `code`
 	// `unsupported_currency` or `invalid_field`.
+	//
+	// The postal country of the sender and of the receiver is checked as in
+	// `POST /v1/documents`. When no country follows, a `ps_test_` key gets
+	// `valid: false` and an entry in `errors` with `path`
+	// `from.address.country` or `to.address.country` and `code`
+	// `party_country_required`. A `ps_live_` key gets the result of the
+	// other checks and the same entry in `warnings`, until the warning
+	// period ends.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -13151,6 +13310,15 @@ func (c *ClientWithResponses) ListDocumentsWithResponse(ctx context.Context, par
 // with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
 // sends as the company. See Sandbox in the introduction for the rule.
 //
+// The sender and the receiver each need a postal country: from
+// `address.country`, else from the VAT number in `tax_id`, else from
+// the `peppol_id` scheme. If no country follows, a `ps_test_` key gets
+// a `422` with the code `party_country_required` and `param`
+// `from.address.country` or `to.address.country`. No credit is
+// charged, no document is made. A `ps_live_` key does not get this
+// `422` yet: for a warning period the document is accepted and goes
+// out with the country `BE`. After that period it gets the same `422`.
+//
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
 //
@@ -13186,6 +13354,15 @@ func (c *ClientWithResponses) SendDocumentWithBodyWithResponse(ctx context.Conte
 // with no `peppol_id`, and no VAT number or `scheme:id` in `tax_id`,
 // sends as the company. See Sandbox in the introduction for the rule.
 //
+// The sender and the receiver each need a postal country: from
+// `address.country`, else from the VAT number in `tax_id`, else from
+// the `peppol_id` scheme. If no country follows, a `ps_test_` key gets
+// a `422` with the code `party_country_required` and `param`
+// `from.address.country` or `to.address.country`. No credit is
+// charged, no document is made. A `ps_live_` key does not get this
+// `422` yet: for a warning period the document is accepted and goes
+// out with the country `BE`. After that period it gets the same `422`.
+//
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
 //
@@ -13218,6 +13395,12 @@ func (c *ClientWithResponses) SendDocumentWithResponse(ctx context.Context, para
 // object with the code `sender_not_registered` in the response array,
 // as in `POST /v1/documents`. It does not cost a credit.
 //
+// An item with no postal country for the sender or the receiver gets
+// an error object with the code `party_country_required` in the
+// response array, as in `POST /v1/documents`: with a `ps_test_` key
+// now, with a `ps_live_` key after the warning period. It does not
+// cost a credit.
+//
 // A `currency` that cannot be sent in one document refuses the whole
 // batch with a 422, before any charge.
 //
@@ -13249,6 +13432,12 @@ func (c *ClientWithResponses) SendDocumentBatchWithBodyWithResponse(ctx context.
 // An item whose sender in `from` is not the company gets an error
 // object with the code `sender_not_registered` in the response array,
 // as in `POST /v1/documents`. It does not cost a credit.
+//
+// An item with no postal country for the sender or the receiver gets
+// an error object with the code `party_country_required` in the
+// response array, as in `POST /v1/documents`: with a `ps_test_` key
+// now, with a `ps_live_` key after the warning period. It does not
+// cost a credit.
 //
 // A `currency` that cannot be sent in one document refuses the whole
 // batch with a 422, before any charge.
@@ -13674,6 +13863,14 @@ func (c *ClientWithResponses) SignupWithResponse(ctx context.Context, body Signu
 // and an entry in `errors` with `path` `currency` and `code`
 // `unsupported_currency` or `invalid_field`.
 //
+// The postal country of the sender and of the receiver is checked as in
+// `POST /v1/documents`. When no country follows, a `ps_test_` key gets
+// `valid: false` and an entry in `errors` with `path`
+// `from.address.country` or `to.address.country` and `code`
+// `party_country_required`. A `ps_live_` key gets the result of the
+// other checks and the same entry in `warnings`, until the warning
+// period ends.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -13713,6 +13910,14 @@ func (c *ClientWithResponses) ValidateDocumentWithBodyWithResponse(ctx context.C
 // A `currency` that `POST /v1/documents` refuses gives `valid: false`
 // and an entry in `errors` with `path` `currency` and `code`
 // `unsupported_currency` or `invalid_field`.
+//
+// The postal country of the sender and of the receiver is checked as in
+// `POST /v1/documents`. When no country follows, a `ps_test_` key gets
+// `valid: false` and an entry in `errors` with `path`
+// `from.address.country` or `to.address.country` and `code`
+// `party_country_required`. A `ps_live_` key gets the result of the
+// other checks and the same entry in `warnings`, until the warning
+// period ends.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
