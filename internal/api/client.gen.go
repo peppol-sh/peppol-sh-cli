@@ -11164,6 +11164,8 @@ type SubmitKycResp struct {
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
 	JSON200 *KycState
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *ErrorObject
 	// JSON401 the response for an HTTP 401 `application/json` response
 	JSON401 *Unauthenticated
 	// JSON409 the response for an HTTP 409 `application/json` response
@@ -11177,6 +11179,11 @@ type SubmitKycResp struct {
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
 func (r SubmitKycResp) GetJSON200() *KycState {
 	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r SubmitKycResp) GetJSON400() *ErrorObject {
+	return r.JSON400
 }
 
 // GetJSON401 returns the response for an HTTP 401 `application/json` response
@@ -15344,6 +15351,13 @@ func ParseSubmitKycResp(rsp *http.Response) (*SubmitKycResp, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorObject
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest Unauthenticated
