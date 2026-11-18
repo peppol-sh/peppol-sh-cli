@@ -1501,9 +1501,9 @@ type Document struct {
 	DeliveredAt *time.Time          `json:"delivered_at,omitempty"`
 	DueDate     *openapi_types.Date `json:"due_date,omitempty"`
 
-	// From Resolved party identity as stored on a sent document. `email` and
-	// `contact_name` are present only when the document was created with
-	// them.
+	// From Resolved party identity as stored on a sent document. `email`,
+	// `contact_name` and `phone` are present only when the document was
+	// created with them.
 	From *PartyInfo `json:"from,omitempty"`
 
 	// Id peppol.sh document ID (prefixed `doc_`)
@@ -1752,9 +1752,9 @@ type DocumentDetail struct {
 	// Events The status changes of the document, oldest first.
 	Events []DocumentEvent `json:"events"`
 
-	// From Resolved party identity as stored on a sent document. `email` and
-	// `contact_name` are present only when the document was created with
-	// them.
+	// From Resolved party identity as stored on a sent document. `email`,
+	// `contact_name` and `phone` are present only when the document was
+	// created with them.
 	From *PartyInfo `json:"from,omitempty"`
 
 	// Id peppol.sh document ID (prefixed `doc_`)
@@ -2290,6 +2290,14 @@ type Party struct {
 	// `sender_not_registered` (422).
 	PeppolId *string `json:"peppol_id,omitempty"`
 
+	// Phone Contact phone (BT-42 for `from`, BT-57 for `to`),
+	// `cac:Contact/cbc:Telephone`. Needs no `email`. It is trimmed and
+	// must then have 1 to 100 characters, else the document is rejected
+	// with `invalid_document_body` (400). The format is not checked.
+	// On `from`: Required by Peppol when seller and buyer are both in
+	// Germany (DE-R-006), together with `contact_name` and `email`.
+	Phone *string `json:"phone,omitempty"`
+
 	// TaxId Tax ID. Required when `peppol_id` is absent, and then it must not
 	// be empty or only whitespace; else the document is rejected with
 	// `invalid_document_body` (400). Can be in Peppol format (`0208:0123456749`)
@@ -2313,9 +2321,9 @@ type Party struct {
 	TaxId *string `json:"tax_id,omitempty"`
 }
 
-// PartyInfo Resolved party identity as stored on a sent document. `email` and
-// `contact_name` are present only when the document was created with
-// them.
+// PartyInfo Resolved party identity as stored on a sent document. `email`,
+// `contact_name` and `phone` are present only when the document was
+// created with them.
 type PartyInfo struct {
 	// ContactName Contact name (BT-41 for `from`, BT-56 for `to`).
 	ContactName *string `json:"contact_name,omitempty"`
@@ -2324,7 +2332,10 @@ type PartyInfo struct {
 	Email    *string `json:"email,omitempty"`
 	Name     *string `json:"name,omitempty"`
 	PeppolId *string `json:"peppol_id,omitempty"`
-	TaxId    *string `json:"tax_id,omitempty"`
+
+	// Phone Contact phone (BT-42 for `from`, BT-57 for `to`).
+	Phone *string `json:"phone,omitempty"`
+	TaxId *string `json:"tax_id,omitempty"`
 }
 
 // PaymentAccount One account a document can be paid to.
@@ -2410,6 +2421,14 @@ type RecipientParty struct {
 	// `sender_not_registered` (422).
 	PeppolId *string `json:"peppol_id,omitempty"`
 
+	// Phone Contact phone (BT-42 for `from`, BT-57 for `to`),
+	// `cac:Contact/cbc:Telephone`. Needs no `email`. It is trimmed and
+	// must then have 1 to 100 characters, else the document is rejected
+	// with `invalid_document_body` (400). The format is not checked.
+	// On `from`: Required by Peppol when seller and buyer are both in
+	// Germany (DE-R-006), together with `contact_name` and `email`.
+	Phone *string `json:"phone,omitempty"`
+
 	// TaxId Tax ID. Required when `peppol_id` is absent, and then it must not
 	// be empty or only whitespace; else the document is rejected with
 	// `invalid_document_body` (400). Can be in Peppol format (`0208:0123456749`)
@@ -2446,7 +2465,10 @@ type RecipientPartyInfo struct {
 	Identifier *string `json:"identifier,omitempty"`
 	Name       *string `json:"name,omitempty"`
 	PeppolId   *string `json:"peppol_id,omitempty"`
-	TaxId      *string `json:"tax_id,omitempty"`
+
+	// Phone Contact phone (BT-42 for `from`, BT-57 for `to`).
+	Phone *string `json:"phone,omitempty"`
+	TaxId *string `json:"tax_id,omitempty"`
 }
 
 // SignupResponse Response from `POST /v1/signup`. Contains the account ID and a one-time API key.
