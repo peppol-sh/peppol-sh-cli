@@ -1309,6 +1309,11 @@ type Company struct {
 	// Id Company ID (prefixed `com_`).
 	Id *string `json:"id,omitempty"`
 
+	// InvoiceContact The Invoice contact of the company: the default for the seller
+	// contact name, email and phone of a document that leaves them out. A
+	// field that is not set is `null`.
+	InvoiceContact *InvoiceContact `json:"invoice_contact,omitempty"`
+
 	// IsLive Whether the company is live on the real Peppol network — `true`
 	// only once its e-invoice.be provider tenant has been provisioned. In
 	// an approved workspace the tenant auto-provisions on create; otherwise
@@ -1354,6 +1359,24 @@ type CompanyCreate struct {
 
 	// Iban Bank account IBAN used as a payment default. Optional.
 	Iban *string `json:"iban,omitempty"`
+
+	// InvoiceContact The Invoice contact of the company: the default for the seller
+	// contact of a document. When a document is accepted, each of
+	// `from.contact_name`, `from.email` and `from.phone` that it leaves out
+	// gets the value here; a value of the document wins, per field. The
+	// result is stored with the document, so a later change here leaves
+	// documents already accepted as they are. Peppol requires the three
+	// fields when seller and buyer are both in Germany (DE-R-005, DE-R-006,
+	// DE-R-007).
+	//
+	// Optional. On `PATCH`, a field that is absent stays as it is, `null`
+	// for a field clears it, and `null` for the object clears the three
+	// fields. A refused value fails with `invalid_field` (400) and the
+	// field in `param` (`invoice_contact.phone`).
+	//
+	// It is separate from the company `email`, which is never put on a
+	// document.
+	InvoiceContact *InvoiceContactInput `json:"invoice_contact,omitempty"`
 
 	// Name Legal company name.
 	Name string `json:"name"`
@@ -1404,6 +1427,11 @@ type CompanyDetail struct {
 	// Id Company ID (prefixed `com_`).
 	Id *string `json:"id,omitempty"`
 
+	// InvoiceContact The Invoice contact of the company: the default for the seller
+	// contact name, email and phone of a document that leaves them out. A
+	// field that is not set is `null`.
+	InvoiceContact *InvoiceContact `json:"invoice_contact,omitempty"`
+
 	// IsLive Whether the company is live on the Peppol network — derived solely
 	// from whether its provider tenant has been provisioned.
 	IsLive *bool   `json:"is_live,omitempty"`
@@ -1429,6 +1457,11 @@ type CompanyListItem struct {
 
 	// Id Company ID (prefixed `com_`).
 	Id *string `json:"id,omitempty"`
+
+	// InvoiceContact The Invoice contact of the company: the default for the seller
+	// contact name, email and phone of a document that leaves them out. A
+	// field that is not set is `null`.
+	InvoiceContact *InvoiceContact `json:"invoice_contact,omitempty"`
 
 	// IsLive Whether the company is live on the Peppol network — derived solely
 	// from whether its provider tenant has been provisioned.
@@ -1457,7 +1490,25 @@ type CompanyUpdate struct {
 	Country *string              `json:"country,omitempty"`
 	Email   *openapi_types.Email `json:"email,omitempty"`
 	Iban    *string              `json:"iban,omitempty"`
-	Name    *string              `json:"name,omitempty"`
+
+	// InvoiceContact The Invoice contact of the company: the default for the seller
+	// contact of a document. When a document is accepted, each of
+	// `from.contact_name`, `from.email` and `from.phone` that it leaves out
+	// gets the value here; a value of the document wins, per field. The
+	// result is stored with the document, so a later change here leaves
+	// documents already accepted as they are. Peppol requires the three
+	// fields when seller and buyer are both in Germany (DE-R-005, DE-R-006,
+	// DE-R-007).
+	//
+	// Optional. On `PATCH`, a field that is absent stays as it is, `null`
+	// for a field clears it, and `null` for the object clears the three
+	// fields. A refused value fails with `invalid_field` (400) and the
+	// field in `param` (`invoice_contact.phone`).
+	//
+	// It is separate from the company `email`, which is never put on a
+	// document.
+	InvoiceContact *InvoiceContactInput `json:"invoice_contact,omitempty"`
+	Name           *string              `json:"name,omitempty"`
 
 	// PeppolId Peppol participant identifier in `scheme:id` form. Editable both
 	// before and after go-live: once the company's provider tenant is
@@ -2043,6 +2094,51 @@ type HealthResponseEnvironment string
 // HealthResponseStatus Overall API health status
 type HealthResponseStatus string
 
+// InvoiceContact The Invoice contact of the company: the default for the seller
+// contact name, email and phone of a document that leaves them out. A
+// field that is not set is `null`.
+type InvoiceContact struct {
+	// Email Default for `from.email` (BT-43).
+	Email string `json:"email"`
+
+	// Name Default for `from.contact_name` (BT-41).
+	Name string `json:"name"`
+
+	// Phone Default for `from.phone` (BT-42).
+	Phone string `json:"phone"`
+}
+
+// InvoiceContactInput The Invoice contact of the company: the default for the seller
+// contact of a document. When a document is accepted, each of
+// `from.contact_name`, `from.email` and `from.phone` that it leaves out
+// gets the value here; a value of the document wins, per field. The
+// result is stored with the document, so a later change here leaves
+// documents already accepted as they are. Peppol requires the three
+// fields when seller and buyer are both in Germany (DE-R-005, DE-R-006,
+// DE-R-007).
+//
+// Optional. On `PATCH`, a field that is absent stays as it is, `null`
+// for a field clears it, and `null` for the object clears the three
+// fields. A refused value fails with `invalid_field` (400) and the
+// field in `param` (`invoice_contact.phone`).
+//
+// It is separate from the company `email`, which is never put on a
+// document.
+type InvoiceContactInput struct {
+	// Email Default for `from.email` (BT-43). A valid email address.
+	Email *openapi_types.Email `json:"email,omitempty"`
+
+	// Name Default for `from.contact_name` (BT-41). It is trimmed and must
+	// then have 1 to 200 characters. A contact name needs an email on
+	// the same party, so it is filled in only when the document or the
+	// Invoice contact has an email.
+	Name *string `json:"name,omitempty"`
+
+	// Phone Default for `from.phone` (BT-42). It is trimmed and must then have
+	// 1 to 100 characters. The format is not checked.
+	Phone *string `json:"phone,omitempty"`
+}
+
 // InvoicePeriod Invoicing period (BG-14) — the service or billing date range.
 type InvoicePeriod struct {
 	EndDate   *openapi_types.Date `json:"end_date,omitempty"`
@@ -2284,11 +2380,17 @@ type Party struct {
 
 	// ContactName Contact name (BT-41 for `from`, BT-56 for `to`),
 	// `cac:Contact/cbc:Name`. Needs an `email` on the same party, else
-	// the document is rejected with `invalid_document_body` (400).
+	// the document is rejected with `invalid_document_body` (400). On
+	// `from` that check runs after the Invoice contact is filled in, so
+	// an email the document leaves out can come from
+	// `invoice_contact.email`. When `contact_name` is absent, the
+	// `invoice_contact.name` of the company fills it, if the party then
+	// has an email.
 	ContactName *string `json:"contact_name,omitempty"`
 
 	// Email Contact email (BT-43 for `from`, BT-58 for `to`),
-	// `cac:Contact/cbc:ElectronicMail`.
+	// `cac:Contact/cbc:ElectronicMail`. On `from`: when absent, the
+	// `invoice_contact.email` of the company fills it.
 	Email *openapi_types.Email `json:"email,omitempty"`
 	Name  string               `json:"name"`
 
@@ -2309,6 +2411,8 @@ type Party struct {
 	// with `invalid_document_body` (400). The format is not checked.
 	// On `from`: Required by Peppol when seller and buyer are both in
 	// Germany (DE-R-006), together with `contact_name` and `email`.
+	// When absent on `from`, the `invoice_contact.phone` of the company
+	// fills it.
 	Phone *string `json:"phone,omitempty"`
 
 	// TaxId Tax ID. Required when `peppol_id` is absent, and then it must not
@@ -2409,11 +2513,17 @@ type RecipientParty struct {
 
 	// ContactName Contact name (BT-41 for `from`, BT-56 for `to`),
 	// `cac:Contact/cbc:Name`. Needs an `email` on the same party, else
-	// the document is rejected with `invalid_document_body` (400).
+	// the document is rejected with `invalid_document_body` (400). On
+	// `from` that check runs after the Invoice contact is filled in, so
+	// an email the document leaves out can come from
+	// `invoice_contact.email`. When `contact_name` is absent, the
+	// `invoice_contact.name` of the company fills it, if the party then
+	// has an email.
 	ContactName *string `json:"contact_name,omitempty"`
 
 	// Email Contact email (BT-43 for `from`, BT-58 for `to`),
-	// `cac:Contact/cbc:ElectronicMail`.
+	// `cac:Contact/cbc:ElectronicMail`. On `from`: when absent, the
+	// `invoice_contact.email` of the company fills it.
 	Email *openapi_types.Email `json:"email,omitempty"`
 
 	// Identifier Buyer identifier (BT-46), `cac:PartyIdentification/cbc:ID` with
@@ -2440,6 +2550,8 @@ type RecipientParty struct {
 	// with `invalid_document_body` (400). The format is not checked.
 	// On `from`: Required by Peppol when seller and buyer are both in
 	// Germany (DE-R-006), together with `contact_name` and `email`.
+	// When absent on `from`, the `invoice_contact.phone` of the company
+	// fills it.
 	Phone *string `json:"phone,omitempty"`
 
 	// TaxId Tax ID. Required when `peppol_id` is absent, and then it must not
@@ -4247,6 +4359,11 @@ type ClientInterface interface {
 	// rejected with `invalid_country`. A missing `name` or `country` returns
 	// `missing_field`.
 	//
+	// **Invoice contact.** `invoice_contact` is the default for the seller
+	// contact name, email and phone of the company's documents. A value
+	// that is refused (a blank or too long name or phone, an email that is
+	// not one) returns `invalid_field`.
+	//
 	// **Peppol ID.** Send `peppol_id`, except for a Belgian company with a
 	// `company_registration_id`: it defaults to `0208:<company_registration_id>`,
 	// without the dots and spaces of the registration number
@@ -4304,6 +4421,11 @@ type ClientInterface interface {
 	// `BE`); codes that are unknown or not Peppol-active (e.g. `FR`) are
 	// rejected with `invalid_country`. A missing `name` or `country` returns
 	// `missing_field`.
+	//
+	// **Invoice contact.** `invoice_contact` is the default for the seller
+	// contact name, email and phone of the company's documents. A value
+	// that is refused (a blank or too long name or phone, an email that is
+	// not one) returns `invalid_field`.
 	//
 	// **Peppol ID.** Send `peppol_id`, except for a Belgian company with a
 	// `company_registration_id`: it defaults to `0208:<company_registration_id>`,
@@ -4387,6 +4509,10 @@ type ClientInterface interface {
 	// Update company details. Only **owners** and **admins** can update.
 	// Send only the fields you want to change.
 	//
+	// In `invoice_contact`, a field that is absent stays as it is and
+	// `null` clears it. A value that is refused returns `invalid_field`.
+	// A change does not alter documents that are already accepted.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with PATCH /v1/companies/{id} (the `UpdateCompany` operationId).
@@ -4396,6 +4522,10 @@ type ClientInterface interface {
 	//
 	// Update company details. Only **owners** and **admins** can update.
 	// Send only the fields you want to change.
+	//
+	// In `invoice_contact`, a field that is absent stays as it is and
+	// `null` clears it. A value that is refused returns `invalid_field`.
+	// A change does not alter documents that are already accepted.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -5320,6 +5450,11 @@ func (c *Client) ListCompanies(ctx context.Context, reqEditors ...RequestEditorF
 // rejected with `invalid_country`. A missing `name` or `country` returns
 // `missing_field`.
 //
+// **Invoice contact.** `invoice_contact` is the default for the seller
+// contact name, email and phone of the company's documents. A value
+// that is refused (a blank or too long name or phone, an email that is
+// not one) returns `invalid_field`.
+//
 // **Peppol ID.** Send `peppol_id`, except for a Belgian company with a
 // `company_registration_id`: it defaults to `0208:<company_registration_id>`,
 // without the dots and spaces of the registration number
@@ -5387,6 +5522,11 @@ func (c *Client) CreateCompanyWithBody(ctx context.Context, contentType string, 
 // `BE`); codes that are unknown or not Peppol-active (e.g. `FR`) are
 // rejected with `invalid_country`. A missing `name` or `country` returns
 // `missing_field`.
+//
+// **Invoice contact.** `invoice_contact` is the default for the seller
+// contact name, email and phone of the company's documents. A value
+// that is refused (a blank or too long name or phone, an email that is
+// not one) returns `invalid_field`.
 //
 // **Peppol ID.** Send `peppol_id`, except for a Belgian company with a
 // `company_registration_id`: it defaults to `0208:<company_registration_id>`,
@@ -5500,6 +5640,10 @@ func (c *Client) GetCompany(ctx context.Context, id CompanyId, reqEditors ...Req
 // Update company details. Only **owners** and **admins** can update.
 // Send only the fields you want to change.
 //
+// In `invoice_contact`, a field that is absent stays as it is and
+// `null` clears it. A value that is refused returns `invalid_field`.
+// A change does not alter documents that are already accepted.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with PATCH /v1/companies/{id} (the `UpdateCompany` operationId).
@@ -5519,6 +5663,10 @@ func (c *Client) UpdateCompanyWithBody(ctx context.Context, id CompanyId, conten
 //
 // Update company details. Only **owners** and **admins** can update.
 // Send only the fields you want to change.
+//
+// In `invoice_contact`, a field that is absent stays as it is and
+// `null` clears it. A value that is refused returns `invalid_field`.
+// A change does not alter documents that are already accepted.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -8937,6 +9085,11 @@ type ClientWithResponsesInterface interface {
 	// rejected with `invalid_country`. A missing `name` or `country` returns
 	// `missing_field`.
 	//
+	// **Invoice contact.** `invoice_contact` is the default for the seller
+	// contact name, email and phone of the company's documents. A value
+	// that is refused (a blank or too long name or phone, an email that is
+	// not one) returns `invalid_field`.
+	//
 	// **Peppol ID.** Send `peppol_id`, except for a Belgian company with a
 	// `company_registration_id`: it defaults to `0208:<company_registration_id>`,
 	// without the dots and spaces of the registration number
@@ -8994,6 +9147,11 @@ type ClientWithResponsesInterface interface {
 	// `BE`); codes that are unknown or not Peppol-active (e.g. `FR`) are
 	// rejected with `invalid_country`. A missing `name` or `country` returns
 	// `missing_field`.
+	//
+	// **Invoice contact.** `invoice_contact` is the default for the seller
+	// contact name, email and phone of the company's documents. A value
+	// that is refused (a blank or too long name or phone, an email that is
+	// not one) returns `invalid_field`.
 	//
 	// **Peppol ID.** Send `peppol_id`, except for a Belgian company with a
 	// `company_registration_id`: it defaults to `0208:<company_registration_id>`,
@@ -9081,6 +9239,10 @@ type ClientWithResponsesInterface interface {
 	// Update company details. Only **owners** and **admins** can update.
 	// Send only the fields you want to change.
 	//
+	// In `invoice_contact`, a field that is absent stays as it is and
+	// `null` clears it. A value that is refused returns `invalid_field`.
+	// A change does not alter documents that are already accepted.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with PATCH /v1/companies/{id} (the `UpdateCompany` operationId).
@@ -9090,6 +9252,10 @@ type ClientWithResponsesInterface interface {
 	//
 	// Update company details. Only **owners** and **admins** can update.
 	// Send only the fields you want to change.
+	//
+	// In `invoice_contact`, a field that is absent stays as it is and
+	// `null` clears it. A value that is refused returns `invalid_field`.
+	// A change does not alter documents that are already accepted.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -13077,6 +13243,11 @@ func (c *ClientWithResponses) ListCompaniesWithResponse(ctx context.Context, req
 // rejected with `invalid_country`. A missing `name` or `country` returns
 // `missing_field`.
 //
+// **Invoice contact.** `invoice_contact` is the default for the seller
+// contact name, email and phone of the company's documents. A value
+// that is refused (a blank or too long name or phone, an email that is
+// not one) returns `invalid_field`.
+//
 // **Peppol ID.** Send `peppol_id`, except for a Belgian company with a
 // `company_registration_id`: it defaults to `0208:<company_registration_id>`,
 // without the dots and spaces of the registration number
@@ -13140,6 +13311,11 @@ func (c *ClientWithResponses) CreateCompanyWithBodyWithResponse(ctx context.Cont
 // `BE`); codes that are unknown or not Peppol-active (e.g. `FR`) are
 // rejected with `invalid_country`. A missing `name` or `country` returns
 // `missing_field`.
+//
+// **Invoice contact.** `invoice_contact` is the default for the seller
+// contact name, email and phone of the company's documents. A value
+// that is refused (a blank or too long name or phone, an email that is
+// not one) returns `invalid_field`.
 //
 // **Peppol ID.** Send `peppol_id`, except for a Belgian company with a
 // `company_registration_id`: it defaults to `0208:<company_registration_id>`,
@@ -13245,6 +13421,10 @@ func (c *ClientWithResponses) GetCompanyWithResponse(ctx context.Context, id Com
 // Update company details. Only **owners** and **admins** can update.
 // Send only the fields you want to change.
 //
+// In `invoice_contact`, a field that is absent stays as it is and
+// `null` clears it. A value that is refused returns `invalid_field`.
+// A change does not alter documents that are already accepted.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with PATCH /v1/companies/{id} (the `UpdateCompany` operationId).
@@ -13260,6 +13440,10 @@ func (c *ClientWithResponses) UpdateCompanyWithBodyWithResponse(ctx context.Cont
 //
 // Update company details. Only **owners** and **admins** can update.
 // Send only the fields you want to change.
+//
+// In `invoice_contact`, a field that is absent stays as it is and
+// `null` clears it. A value that is refused returns `invalid_field`.
+// A change does not alter documents that are already accepted.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
