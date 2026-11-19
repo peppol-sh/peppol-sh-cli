@@ -3898,7 +3898,7 @@ type ListEventsParams struct {
 	// Q Free-text search. Matches case-insensitively on document number or recipient name.
 	Q *string `form:"q,omitempty" json:"q,omitempty"`
 
-	// Cursor Pagination cursor from previous response
+	// Cursor The `next_cursor` of the previous page. A cursor that is not unpadded base64url, or whose decoded text has no newline, gives a 400 `invalid_cursor`.
 	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit Number of events per page
@@ -11551,6 +11551,8 @@ type ListEventsResp struct {
 		HasMore    bool               `json:"has_more"`
 		NextCursor string             `json:"next_cursor"`
 	}
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *BadRequest
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
@@ -11560,6 +11562,11 @@ func (r ListEventsResp) GetJSON200() *struct {
 	NextCursor string             `json:"next_cursor"`
 } {
 	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r ListEventsResp) GetJSON400() *BadRequest {
+	return r.JSON400
 }
 
 // GetBody returns the raw response body bytes
@@ -15927,6 +15934,13 @@ func ParseListEventsResp(rsp *http.Response) (*ListEventsResp, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
 
 	}
 
