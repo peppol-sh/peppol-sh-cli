@@ -1682,6 +1682,13 @@ type DocumentCreate struct {
 	//
 	// Without `buyer_reference`, a document gets `purchase_order`,
 	// else `to.identifier`, else `Unknown` as BT-10.
+	//
+	// Required in two cases. When seller and buyer are both in Germany
+	// (DE-R-015): without it the document is rejected with
+	// `de_domestic_fields_missing` (422). When the receiver is a German
+	// public body (a `0204` Peppol ID): it holds the Leitweg-ID, and
+	// without it the document is rejected with
+	// `buyer_reference_required` (422).
 	BuyerReference *string `json:"buyer_reference,omitempty"`
 
 	// Charges Document-level charges (BG-21) — additions applied before tax.
@@ -1722,6 +1729,10 @@ type DocumentCreate struct {
 	// more accounts. Use `accounts` for a bankgiro or plusgiro number or for
 	// more than one account. `iban` and `bic` are the older form of one
 	// `iban` account: they give a 400 together with `accounts`.
+	//
+	// Required by Peppol when seller and buyer are both in Germany
+	// (DE-R-001): without `payment_means` the document is rejected with
+	// `de_domestic_fields_missing` (422).
 	PaymentMeans *PaymentMeans `json:"payment_means,omitempty"`
 
 	// PrecedingInvoice Preceding invoice reference — the earlier invoice this document
@@ -1932,6 +1943,8 @@ type DocumentStatus string
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
+// | validation_error | `de_domestic_fields_missing` | 422 — `POST /v1/documents`: seller and buyer are both in Germany and a field that Peppol requires is missing: `from.contact_name` (DE-R-005), `from.email` (DE-R-007), `from.phone` (DE-R-006), `payment_means` (DE-R-001), `buyer_reference` (DE-R-015). `param` is the first missing field. `details.missing` lists each one as `{ field, rule }`. The `invoice_contact` of the company fills the three `from` fields. |
+// | validation_error | `buyer_reference_required` | 422 — `POST /v1/documents`: the receiver is a German public body (a `0204` Peppol ID) and `buyer_reference` is missing. `param` is `buyer_reference`. No `details`. Put the Leitweg-ID of the receiver in `buyer_reference`. A German domestic document gets `de_domestic_fields_missing` instead. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -2000,8 +2013,10 @@ type ErrorObject struct {
 		Code string `json:"code"`
 
 		// Details Optional structured payload with additional context (e.g. the list
-		// of issues for UBL schema/business-rule failures, or the provider's
-		// raw validation errors for `provider_validation_failed`).
+		// of issues for UBL schema/business-rule failures, the provider's
+		// raw validation errors for `provider_validation_failed`, or
+		// `{ missing: [{ field, rule }] }` for
+		// `de_domestic_fields_missing`).
 		Details interface{} `json:"details,omitempty"`
 
 		// Message Human-readable error message.
@@ -2385,12 +2400,17 @@ type Party struct {
 	// an email the document leaves out can come from
 	// `invoice_contact.email`. When `contact_name` is absent, the
 	// `invoice_contact.name` of the company fills it, if the party then
-	// has an email.
+	// has an email. Required on `from` when seller and buyer are both
+	// in Germany (DE-R-005): if it is still absent then, the document
+	// is rejected with `de_domestic_fields_missing` (422).
 	ContactName *string `json:"contact_name,omitempty"`
 
 	// Email Contact email (BT-43 for `from`, BT-58 for `to`),
 	// `cac:Contact/cbc:ElectronicMail`. On `from`: when absent, the
-	// `invoice_contact.email` of the company fills it.
+	// `invoice_contact.email` of the company fills it. Required on
+	// `from` when seller and buyer are both in Germany (DE-R-007):
+	// if it is still absent then, the document is rejected with
+	// `de_domestic_fields_missing` (422).
 	Email *openapi_types.Email `json:"email,omitempty"`
 	Name  string               `json:"name"`
 
@@ -2412,7 +2432,8 @@ type Party struct {
 	// On `from`: Required by Peppol when seller and buyer are both in
 	// Germany (DE-R-006), together with `contact_name` and `email`.
 	// When absent on `from`, the `invoice_contact.phone` of the company
-	// fills it.
+	// fills it. If one of the three is still absent then, the document
+	// is rejected with `de_domestic_fields_missing` (422).
 	Phone *string `json:"phone,omitempty"`
 
 	// TaxId Tax ID. Required when `peppol_id` is absent, and then it must not
@@ -2474,6 +2495,10 @@ type PaymentAccountType string
 // more accounts. Use `accounts` for a bankgiro or plusgiro number or for
 // more than one account. `iban` and `bic` are the older form of one
 // `iban` account: they give a 400 together with `accounts`.
+//
+// Required by Peppol when seller and buyer are both in Germany
+// (DE-R-001): without `payment_means` the document is rejected with
+// `de_domestic_fields_missing` (422).
 type PaymentMeans struct {
 	// Accounts The accounts the buyer can pay to, with the same method and reference.
 	Accounts *[]PaymentAccount `json:"accounts,omitempty"`
@@ -2518,12 +2543,17 @@ type RecipientParty struct {
 	// an email the document leaves out can come from
 	// `invoice_contact.email`. When `contact_name` is absent, the
 	// `invoice_contact.name` of the company fills it, if the party then
-	// has an email.
+	// has an email. Required on `from` when seller and buyer are both
+	// in Germany (DE-R-005): if it is still absent then, the document
+	// is rejected with `de_domestic_fields_missing` (422).
 	ContactName *string `json:"contact_name,omitempty"`
 
 	// Email Contact email (BT-43 for `from`, BT-58 for `to`),
 	// `cac:Contact/cbc:ElectronicMail`. On `from`: when absent, the
-	// `invoice_contact.email` of the company fills it.
+	// `invoice_contact.email` of the company fills it. Required on
+	// `from` when seller and buyer are both in Germany (DE-R-007):
+	// if it is still absent then, the document is rejected with
+	// `de_domestic_fields_missing` (422).
 	Email *openapi_types.Email `json:"email,omitempty"`
 
 	// Identifier Buyer identifier (BT-46), `cac:PartyIdentification/cbc:ID` with
@@ -2551,7 +2581,8 @@ type RecipientParty struct {
 	// On `from`: Required by Peppol when seller and buyer are both in
 	// Germany (DE-R-006), together with `contact_name` and `email`.
 	// When absent on `from`, the `invoice_contact.phone` of the company
-	// fills it.
+	// fills it. If one of the three is still absent then, the document
+	// is rejected with `de_domestic_fields_missing` (422).
 	Phone *string `json:"phone,omitempty"`
 
 	// TaxId Tax ID. Required when `peppol_id` is absent, and then it must not
@@ -2741,7 +2772,8 @@ type ValidationIssue struct {
 	// Code Machine-readable issue code: the Peppol validation rule id (e.g.
 	// `BR-S-02`), our own code for a request body issue (e.g.
 	// `invalid_document_body`, `sender_not_registered`,
-	// `party_country_required`), or
+	// `party_country_required`, `de_domestic_fields_missing`,
+	// `buyer_reference_required`), or
 	// `invalid_document` when the provider rejects the document without
 	// a rule id.
 	Code *string `json:"code,omitempty"`
@@ -2920,6 +2952,8 @@ type IdempotencyKey = string
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
+// | validation_error | `de_domestic_fields_missing` | 422 — `POST /v1/documents`: seller and buyer are both in Germany and a field that Peppol requires is missing: `from.contact_name` (DE-R-005), `from.email` (DE-R-007), `from.phone` (DE-R-006), `payment_means` (DE-R-001), `buyer_reference` (DE-R-015). `param` is the first missing field. `details.missing` lists each one as `{ field, rule }`. The `invoice_contact` of the company fills the three `from` fields. |
+// | validation_error | `buyer_reference_required` | 422 — `POST /v1/documents`: the receiver is a German public body (a `0204` Peppol ID) and `buyer_reference` is missing. `param` is `buyer_reference`. No `details`. Put the Leitweg-ID of the receiver in `buyer_reference`. A German domestic document gets `de_domestic_fields_missing` instead. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3004,6 +3038,8 @@ type BadRequest = ErrorObject
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
+// | validation_error | `de_domestic_fields_missing` | 422 — `POST /v1/documents`: seller and buyer are both in Germany and a field that Peppol requires is missing: `from.contact_name` (DE-R-005), `from.email` (DE-R-007), `from.phone` (DE-R-006), `payment_means` (DE-R-001), `buyer_reference` (DE-R-015). `param` is the first missing field. `details.missing` lists each one as `{ field, rule }`. The `invoice_contact` of the company fills the three `from` fields. |
+// | validation_error | `buyer_reference_required` | 422 — `POST /v1/documents`: the receiver is a German public body (a `0204` Peppol ID) and `buyer_reference` is missing. `param` is `buyer_reference`. No `details`. Put the Leitweg-ID of the receiver in `buyer_reference`. A German domestic document gets `de_domestic_fields_missing` instead. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3088,6 +3124,8 @@ type Forbidden = ErrorObject
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
+// | validation_error | `de_domestic_fields_missing` | 422 — `POST /v1/documents`: seller and buyer are both in Germany and a field that Peppol requires is missing: `from.contact_name` (DE-R-005), `from.email` (DE-R-007), `from.phone` (DE-R-006), `payment_means` (DE-R-001), `buyer_reference` (DE-R-015). `param` is the first missing field. `details.missing` lists each one as `{ field, rule }`. The `invoice_contact` of the company fills the three `from` fields. |
+// | validation_error | `buyer_reference_required` | 422 — `POST /v1/documents`: the receiver is a German public body (a `0204` Peppol ID) and `buyer_reference` is missing. `param` is `buyer_reference`. No `details`. Put the Leitweg-ID of the receiver in `buyer_reference`. A German domestic document gets `de_domestic_fields_missing` instead. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3172,6 +3210,8 @@ type NotFound = ErrorObject
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
+// | validation_error | `de_domestic_fields_missing` | 422 — `POST /v1/documents`: seller and buyer are both in Germany and a field that Peppol requires is missing: `from.contact_name` (DE-R-005), `from.email` (DE-R-007), `from.phone` (DE-R-006), `payment_means` (DE-R-001), `buyer_reference` (DE-R-015). `param` is the first missing field. `details.missing` lists each one as `{ field, rule }`. The `invoice_contact` of the company fills the three `from` fields. |
+// | validation_error | `buyer_reference_required` | 422 — `POST /v1/documents`: the receiver is a German public body (a `0204` Peppol ID) and `buyer_reference` is missing. `param` is `buyer_reference`. No `details`. Put the Leitweg-ID of the receiver in `buyer_reference`. A German domestic document gets `de_domestic_fields_missing` instead. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3256,6 +3296,8 @@ type PaymentRequired = ErrorObject
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
+// | validation_error | `de_domestic_fields_missing` | 422 — `POST /v1/documents`: seller and buyer are both in Germany and a field that Peppol requires is missing: `from.contact_name` (DE-R-005), `from.email` (DE-R-007), `from.phone` (DE-R-006), `payment_means` (DE-R-001), `buyer_reference` (DE-R-015). `param` is the first missing field. `details.missing` lists each one as `{ field, rule }`. The `invoice_contact` of the company fills the three `from` fields. |
+// | validation_error | `buyer_reference_required` | 422 — `POST /v1/documents`: the receiver is a German public body (a `0204` Peppol ID) and `buyer_reference` is missing. `param` is `buyer_reference`. No `details`. Put the Leitweg-ID of the receiver in `buyer_reference`. A German domestic document gets `de_domestic_fields_missing` instead. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3340,6 +3382,8 @@ type RateLimited = ErrorObject
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
+// | validation_error | `de_domestic_fields_missing` | 422 — `POST /v1/documents`: seller and buyer are both in Germany and a field that Peppol requires is missing: `from.contact_name` (DE-R-005), `from.email` (DE-R-007), `from.phone` (DE-R-006), `payment_means` (DE-R-001), `buyer_reference` (DE-R-015). `param` is the first missing field. `details.missing` lists each one as `{ field, rule }`. The `invoice_contact` of the company fills the three `from` fields. |
+// | validation_error | `buyer_reference_required` | 422 — `POST /v1/documents`: the receiver is a German public body (a `0204` Peppol ID) and `buyer_reference` is missing. `param` is `buyer_reference`. No `details`. Put the Leitweg-ID of the receiver in `buyer_reference`. A German domestic document gets `de_domestic_fields_missing` instead. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3424,6 +3468,8 @@ type Unauthenticated = ErrorObject
 // | validation_error | `peppol_id_tax_id_mismatch` | 400 — a VAT-scheme Peppol ID is not the VAT number in the `tax_id` of the company. The message names the Peppol ID to use. |
 // | validation_error | `sender_not_registered` | 422 — `POST /v1/documents`: the sender in `from` is not the company of `company_id`. `param` is `from.peppol_id` or `from.tax_id`. No `details`. Give the Peppol ID of the company or its own VAT number, or give neither. |
 // | validation_error | `party_country_required` | 422 — `POST /v1/documents`: no postal country follows for the sender or the receiver. `param` is `from.address.country` or `to.address.country`. No `details`. Give `address.country`, a VAT number in `tax_id`, or a `peppol_id` of a scheme of one country. A `ps_test_` key gets it now; a `ps_live_` key gets it after a warning period. |
+// | validation_error | `de_domestic_fields_missing` | 422 — `POST /v1/documents`: seller and buyer are both in Germany and a field that Peppol requires is missing: `from.contact_name` (DE-R-005), `from.email` (DE-R-007), `from.phone` (DE-R-006), `payment_means` (DE-R-001), `buyer_reference` (DE-R-015). `param` is the first missing field. `details.missing` lists each one as `{ field, rule }`. The `invoice_contact` of the company fills the three `from` fields. |
+// | validation_error | `buyer_reference_required` | 422 — `POST /v1/documents`: the receiver is a German public body (a `0204` Peppol ID) and `buyer_reference` is missing. `param` is `buyer_reference`. No `details`. Put the Leitweg-ID of the receiver in `buyer_reference`. A German domestic document gets `de_domestic_fields_missing` instead. |
 // | validation_error | `invalid_scheme` | Peppol scheme (EAS) is unknown. |
 // | validation_error | `invalid_body` | The request body could not be read (for example, it is not valid JSON). |
 // | validation_error | `invalid_document_body` | A document field is missing or has an invalid value. `param` is its dot-path, for example `from.tax_id`. |
@@ -3552,6 +3598,13 @@ type SendDocumentJSONBody struct {
 	//
 	// Without `buyer_reference`, a document gets `purchase_order`,
 	// else `to.identifier`, else `Unknown` as BT-10.
+	//
+	// Required in two cases. When seller and buyer are both in Germany
+	// (DE-R-015): without it the document is rejected with
+	// `de_domestic_fields_missing` (422). When the receiver is a German
+	// public body (a `0204` Peppol ID): it holds the Leitweg-ID, and
+	// without it the document is rejected with
+	// `buyer_reference_required` (422).
 	BuyerReference *string `json:"buyer_reference,omitempty"`
 
 	// Charges Document-level charges (BG-21) — additions applied before tax.
@@ -3595,6 +3648,10 @@ type SendDocumentJSONBody struct {
 	// more accounts. Use `accounts` for a bankgiro or plusgiro number or for
 	// more than one account. `iban` and `bic` are the older form of one
 	// `iban` account: they give a 400 together with `accounts`.
+	//
+	// Required by Peppol when seller and buyer are both in Germany
+	// (DE-R-001): without `payment_means` the document is rejected with
+	// `de_domestic_fields_missing` (422).
 	PaymentMeans *PaymentMeans `json:"payment_means,omitempty"`
 
 	// PrecedingInvoice Preceding invoice reference — the earlier invoice this document
@@ -3697,6 +3754,13 @@ type SendDocumentBatchJSONBody = []struct {
 	//
 	// Without `buyer_reference`, a document gets `purchase_order`,
 	// else `to.identifier`, else `Unknown` as BT-10.
+	//
+	// Required in two cases. When seller and buyer are both in Germany
+	// (DE-R-015): without it the document is rejected with
+	// `de_domestic_fields_missing` (422). When the receiver is a German
+	// public body (a `0204` Peppol ID): it holds the Leitweg-ID, and
+	// without it the document is rejected with
+	// `buyer_reference_required` (422).
 	BuyerReference *string `json:"buyer_reference,omitempty"`
 
 	// Charges Document-level charges (BG-21) — additions applied before tax.
@@ -3738,6 +3802,10 @@ type SendDocumentBatchJSONBody = []struct {
 	// more accounts. Use `accounts` for a bankgiro or plusgiro number or for
 	// more than one account. `iban` and `bic` are the older form of one
 	// `iban` account: they give a 400 together with `accounts`.
+	//
+	// Required by Peppol when seller and buyer are both in Germany
+	// (DE-R-001): without `payment_means` the document is rejected with
+	// `de_domestic_fields_missing` (422).
 	PaymentMeans *PaymentMeans `json:"payment_means,omitempty"`
 
 	// PrecedingInvoice Preceding invoice reference — the earlier invoice this document
@@ -3895,6 +3963,13 @@ type ValidateDocumentJSONBody struct {
 	//
 	// Without `buyer_reference`, a document gets `purchase_order`,
 	// else `to.identifier`, else `Unknown` as BT-10.
+	//
+	// Required in two cases. When seller and buyer are both in Germany
+	// (DE-R-015): without it the document is rejected with
+	// `de_domestic_fields_missing` (422). When the receiver is a German
+	// public body (a `0204` Peppol ID): it holds the Leitweg-ID, and
+	// without it the document is rejected with
+	// `buyer_reference_required` (422).
 	BuyerReference *string `json:"buyer_reference,omitempty"`
 
 	// Charges Document-level charges (BG-21) — additions applied before tax.
@@ -3938,6 +4013,10 @@ type ValidateDocumentJSONBody struct {
 	// more accounts. Use `accounts` for a bankgiro or plusgiro number or for
 	// more than one account. `iban` and `bic` are the older form of one
 	// `iban` account: they give a 400 together with `accounts`.
+	//
+	// Required by Peppol when seller and buyer are both in Germany
+	// (DE-R-001): without `payment_means` the document is rejected with
+	// `de_domestic_fields_missing` (422).
 	PaymentMeans *PaymentMeans `json:"payment_means,omitempty"`
 
 	// PrecedingInvoice Preceding invoice reference — the earlier invoice this document
@@ -4571,6 +4650,24 @@ type ClientInterface interface {
 	// `422` yet: for a warning period the document is accepted and goes
 	// out with the country `BE`. After that period it gets the same `422`.
 	//
+	// A German domestic document has a seller and a buyer that are both in
+	// Germany, by the country rule above. Peppol requires five fields on
+	// it: `from.contact_name` (DE-R-005), `from.email` (DE-R-007),
+	// `from.phone` (DE-R-006), `payment_means` (DE-R-001) and
+	// `buyer_reference` (DE-R-015). The `invoice_contact` of the company
+	// is filled in first, so it satisfies the three `from` fields. If a
+	// field is missing, the response is a `422` with the code
+	// `de_domestic_fields_missing`. `param` is the first missing field and
+	// `details.missing` lists them all. Any other document to a `0204`
+	// receiver (a German public body; `to.peppol_id`, or a `0204:…` in
+	// `to.tax_id`) needs `buyer_reference`, which holds the Leitweg-ID. If
+	// it is missing, the response is a `422` with the code
+	// `buyer_reference_required` and `param` `buyer_reference`. Both key
+	// modes get these checks. No credit is charged, no document is made.
+	// Before, such a document got a `202`, failed at the Peppol network
+	// and the credit came back about a minute later. A replay of an
+	// idempotency key is not checked again.
+	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
 	//
@@ -4609,6 +4706,24 @@ type ClientInterface interface {
 	// `422` yet: for a warning period the document is accepted and goes
 	// out with the country `BE`. After that period it gets the same `422`.
 	//
+	// A German domestic document has a seller and a buyer that are both in
+	// Germany, by the country rule above. Peppol requires five fields on
+	// it: `from.contact_name` (DE-R-005), `from.email` (DE-R-007),
+	// `from.phone` (DE-R-006), `payment_means` (DE-R-001) and
+	// `buyer_reference` (DE-R-015). The `invoice_contact` of the company
+	// is filled in first, so it satisfies the three `from` fields. If a
+	// field is missing, the response is a `422` with the code
+	// `de_domestic_fields_missing`. `param` is the first missing field and
+	// `details.missing` lists them all. Any other document to a `0204`
+	// receiver (a German public body; `to.peppol_id`, or a `0204:…` in
+	// `to.tax_id`) needs `buyer_reference`, which holds the Leitweg-ID. If
+	// it is missing, the response is a `422` with the code
+	// `buyer_reference_required` and `param` `buyer_reference`. Both key
+	// modes get these checks. No credit is charged, no document is made.
+	// Before, such a document got a `202`, failed at the Peppol network
+	// and the credit came back about a minute later. A replay of an
+	// idempotency key is not checked again.
+	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
 	//
@@ -4641,6 +4756,13 @@ type ClientInterface interface {
 	// now, with a `ps_live_` key after the warning period. It does not
 	// cost a credit.
 	//
+	// A German domestic item without a field that Peppol requires gets an
+	// error object with the code `de_domestic_fields_missing` (with
+	// `details.missing`) in the response array, and an item to a `0204`
+	// receiver without `buyer_reference` gets one with the code
+	// `buyer_reference_required`, as in `POST /v1/documents`. It does not
+	// cost a credit. The other items go on.
+	//
 	// A `currency` that cannot be sent in one document refuses the whole
 	// batch with a 422, before any charge.
 	//
@@ -4672,6 +4794,13 @@ type ClientInterface interface {
 	// response array, as in `POST /v1/documents`: with a `ps_test_` key
 	// now, with a `ps_live_` key after the warning period. It does not
 	// cost a credit.
+	//
+	// A German domestic item without a field that Peppol requires gets an
+	// error object with the code `de_domestic_fields_missing` (with
+	// `details.missing`) in the response array, and an item to a `0204`
+	// receiver without `buyer_reference` gets one with the code
+	// `buyer_reference_required`, as in `POST /v1/documents`. It does not
+	// cost a credit. The other items go on.
 	//
 	// A `currency` that cannot be sent in one document refuses the whole
 	// batch with a 422, before any charge.
@@ -4983,6 +5112,15 @@ type ClientInterface interface {
 	// other checks and the same entry in `warnings`, until the warning
 	// period ends.
 	//
+	// The German required fields are checked as in `POST /v1/documents`,
+	// for both key modes. A German domestic document gives `valid: false`
+	// and one entry in `errors` for each missing field: `path` is the
+	// field (for example `from.phone`), `code` is
+	// `de_domestic_fields_missing` and the message names the Peppol rule.
+	// A document to a `0204` receiver without `buyer_reference` gives
+	// `valid: false` and one entry with `path` `buyer_reference` and
+	// `code` `buyer_reference_required`.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -5024,6 +5162,15 @@ type ClientInterface interface {
 	// `party_country_required`. A `ps_live_` key gets the result of the
 	// other checks and the same entry in `warnings`, until the warning
 	// period ends.
+	//
+	// The German required fields are checked as in `POST /v1/documents`,
+	// for both key modes. A German domestic document gives `valid: false`
+	// and one entry in `errors` for each missing field: `path` is the
+	// field (for example `from.phone`), `code` is
+	// `de_domestic_fields_missing` and the message names the Peppol rule.
+	// A document to a `0204` receiver without `buyer_reference` gives
+	// `valid: false` and one entry with `path` `buyer_reference` and
+	// `code` `buyer_reference_required`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -5732,6 +5879,24 @@ func (c *Client) ListDocuments(ctx context.Context, params *ListDocumentsParams,
 // `422` yet: for a warning period the document is accepted and goes
 // out with the country `BE`. After that period it gets the same `422`.
 //
+// A German domestic document has a seller and a buyer that are both in
+// Germany, by the country rule above. Peppol requires five fields on
+// it: `from.contact_name` (DE-R-005), `from.email` (DE-R-007),
+// `from.phone` (DE-R-006), `payment_means` (DE-R-001) and
+// `buyer_reference` (DE-R-015). The `invoice_contact` of the company
+// is filled in first, so it satisfies the three `from` fields. If a
+// field is missing, the response is a `422` with the code
+// `de_domestic_fields_missing`. `param` is the first missing field and
+// `details.missing` lists them all. Any other document to a `0204`
+// receiver (a German public body; `to.peppol_id`, or a `0204:…` in
+// `to.tax_id`) needs `buyer_reference`, which holds the Leitweg-ID. If
+// it is missing, the response is a `422` with the code
+// `buyer_reference_required` and `param` `buyer_reference`. Both key
+// modes get these checks. No credit is charged, no document is made.
+// Before, such a document got a `202`, failed at the Peppol network
+// and the credit came back about a minute later. A replay of an
+// idempotency key is not checked again.
+//
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
 //
@@ -5780,6 +5945,24 @@ func (c *Client) SendDocumentWithBody(ctx context.Context, params *SendDocumentP
 // `422` yet: for a warning period the document is accepted and goes
 // out with the country `BE`. After that period it gets the same `422`.
 //
+// A German domestic document has a seller and a buyer that are both in
+// Germany, by the country rule above. Peppol requires five fields on
+// it: `from.contact_name` (DE-R-005), `from.email` (DE-R-007),
+// `from.phone` (DE-R-006), `payment_means` (DE-R-001) and
+// `buyer_reference` (DE-R-015). The `invoice_contact` of the company
+// is filled in first, so it satisfies the three `from` fields. If a
+// field is missing, the response is a `422` with the code
+// `de_domestic_fields_missing`. `param` is the first missing field and
+// `details.missing` lists them all. Any other document to a `0204`
+// receiver (a German public body; `to.peppol_id`, or a `0204:…` in
+// `to.tax_id`) needs `buyer_reference`, which holds the Leitweg-ID. If
+// it is missing, the response is a `422` with the code
+// `buyer_reference_required` and `param` `buyer_reference`. Both key
+// modes get these checks. No credit is charged, no document is made.
+// Before, such a document got a `202`, failed at the Peppol network
+// and the credit came back about a minute later. A replay of an
+// idempotency key is not checked again.
+//
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
 //
@@ -5822,6 +6005,13 @@ func (c *Client) SendDocument(ctx context.Context, params *SendDocumentParams, b
 // now, with a `ps_live_` key after the warning period. It does not
 // cost a credit.
 //
+// A German domestic item without a field that Peppol requires gets an
+// error object with the code `de_domestic_fields_missing` (with
+// `details.missing`) in the response array, and an item to a `0204`
+// receiver without `buyer_reference` gets one with the code
+// `buyer_reference_required`, as in `POST /v1/documents`. It does not
+// cost a credit. The other items go on.
+//
 // A `currency` that cannot be sent in one document refuses the whole
 // batch with a 422, before any charge.
 //
@@ -5863,6 +6053,13 @@ func (c *Client) SendDocumentBatchWithBody(ctx context.Context, contentType stri
 // response array, as in `POST /v1/documents`: with a `ps_test_` key
 // now, with a `ps_live_` key after the warning period. It does not
 // cost a credit.
+//
+// A German domestic item without a field that Peppol requires gets an
+// error object with the code `de_domestic_fields_missing` (with
+// `details.missing`) in the response array, and an item to a `0204`
+// receiver without `buyer_reference` gets one with the code
+// `buyer_reference_required`, as in `POST /v1/documents`. It does not
+// cost a credit. The other items go on.
 //
 // A `currency` that cannot be sent in one document refuses the whole
 // batch with a 422, before any charge.
@@ -6344,6 +6541,15 @@ func (c *Client) Signup(ctx context.Context, body SignupJSONRequestBody, reqEdit
 // other checks and the same entry in `warnings`, until the warning
 // period ends.
 //
+// The German required fields are checked as in `POST /v1/documents`,
+// for both key modes. A German domestic document gives `valid: false`
+// and one entry in `errors` for each missing field: `path` is the
+// field (for example `from.phone`), `code` is
+// `de_domestic_fields_missing` and the message names the Peppol rule.
+// A document to a `0204` receiver without `buyer_reference` gives
+// `valid: false` and one entry with `path` `buyer_reference` and
+// `code` `buyer_reference_required`.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -6395,6 +6601,15 @@ func (c *Client) ValidateDocumentWithBody(ctx context.Context, contentType strin
 // `party_country_required`. A `ps_live_` key gets the result of the
 // other checks and the same entry in `warnings`, until the warning
 // period ends.
+//
+// The German required fields are checked as in `POST /v1/documents`,
+// for both key modes. A German domestic document gives `valid: false`
+// and one entry in `errors` for each missing field: `path` is the
+// field (for example `from.phone`), `code` is
+// `de_domestic_fields_missing` and the message names the Peppol rule.
+// A document to a `0204` receiver without `buyer_reference` gives
+// `valid: false` and one entry with `path` `buyer_reference` and
+// `code` `buyer_reference_required`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -9303,6 +9518,24 @@ type ClientWithResponsesInterface interface {
 	// `422` yet: for a warning period the document is accepted and goes
 	// out with the country `BE`. After that period it gets the same `422`.
 	//
+	// A German domestic document has a seller and a buyer that are both in
+	// Germany, by the country rule above. Peppol requires five fields on
+	// it: `from.contact_name` (DE-R-005), `from.email` (DE-R-007),
+	// `from.phone` (DE-R-006), `payment_means` (DE-R-001) and
+	// `buyer_reference` (DE-R-015). The `invoice_contact` of the company
+	// is filled in first, so it satisfies the three `from` fields. If a
+	// field is missing, the response is a `422` with the code
+	// `de_domestic_fields_missing`. `param` is the first missing field and
+	// `details.missing` lists them all. Any other document to a `0204`
+	// receiver (a German public body; `to.peppol_id`, or a `0204:…` in
+	// `to.tax_id`) needs `buyer_reference`, which holds the Leitweg-ID. If
+	// it is missing, the response is a `422` with the code
+	// `buyer_reference_required` and `param` `buyer_reference`. Both key
+	// modes get these checks. No credit is charged, no document is made.
+	// Before, such a document got a `202`, failed at the Peppol network
+	// and the credit came back about a minute later. A replay of an
+	// idempotency key is not checked again.
+	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
 	//
@@ -9341,6 +9574,24 @@ type ClientWithResponsesInterface interface {
 	// `422` yet: for a warning period the document is accepted and goes
 	// out with the country `BE`. After that period it gets the same `422`.
 	//
+	// A German domestic document has a seller and a buyer that are both in
+	// Germany, by the country rule above. Peppol requires five fields on
+	// it: `from.contact_name` (DE-R-005), `from.email` (DE-R-007),
+	// `from.phone` (DE-R-006), `payment_means` (DE-R-001) and
+	// `buyer_reference` (DE-R-015). The `invoice_contact` of the company
+	// is filled in first, so it satisfies the three `from` fields. If a
+	// field is missing, the response is a `422` with the code
+	// `de_domestic_fields_missing`. `param` is the first missing field and
+	// `details.missing` lists them all. Any other document to a `0204`
+	// receiver (a German public body; `to.peppol_id`, or a `0204:…` in
+	// `to.tax_id`) needs `buyer_reference`, which holds the Leitweg-ID. If
+	// it is missing, the response is a `422` with the code
+	// `buyer_reference_required` and `param` `buyer_reference`. Both key
+	// modes get these checks. No credit is charged, no document is made.
+	// Before, such a document got a `202`, failed at the Peppol network
+	// and the credit came back about a minute later. A replay of an
+	// idempotency key is not checked again.
+	//
 	// To make a retry safe, send an `Idempotency-Key` header (or the
 	// `idempotency_key` body field, which is the same key).
 	//
@@ -9373,6 +9624,13 @@ type ClientWithResponsesInterface interface {
 	// now, with a `ps_live_` key after the warning period. It does not
 	// cost a credit.
 	//
+	// A German domestic item without a field that Peppol requires gets an
+	// error object with the code `de_domestic_fields_missing` (with
+	// `details.missing`) in the response array, and an item to a `0204`
+	// receiver without `buyer_reference` gets one with the code
+	// `buyer_reference_required`, as in `POST /v1/documents`. It does not
+	// cost a credit. The other items go on.
+	//
 	// A `currency` that cannot be sent in one document refuses the whole
 	// batch with a 422, before any charge.
 	//
@@ -9404,6 +9662,13 @@ type ClientWithResponsesInterface interface {
 	// response array, as in `POST /v1/documents`: with a `ps_test_` key
 	// now, with a `ps_live_` key after the warning period. It does not
 	// cost a credit.
+	//
+	// A German domestic item without a field that Peppol requires gets an
+	// error object with the code `de_domestic_fields_missing` (with
+	// `details.missing`) in the response array, and an item to a `0204`
+	// receiver without `buyer_reference` gets one with the code
+	// `buyer_reference_required`, as in `POST /v1/documents`. It does not
+	// cost a credit. The other items go on.
 	//
 	// A `currency` that cannot be sent in one document refuses the whole
 	// batch with a 422, before any charge.
@@ -9735,6 +10000,15 @@ type ClientWithResponsesInterface interface {
 	// other checks and the same entry in `warnings`, until the warning
 	// period ends.
 	//
+	// The German required fields are checked as in `POST /v1/documents`,
+	// for both key modes. A German domestic document gives `valid: false`
+	// and one entry in `errors` for each missing field: `path` is the
+	// field (for example `from.phone`), `code` is
+	// `de_domestic_fields_missing` and the message names the Peppol rule.
+	// A document to a `0204` receiver without `buyer_reference` gives
+	// `valid: false` and one entry with `path` `buyer_reference` and
+	// `code` `buyer_reference_required`.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -9776,6 +10050,15 @@ type ClientWithResponsesInterface interface {
 	// `party_country_required`. A `ps_live_` key gets the result of the
 	// other checks and the same entry in `warnings`, until the warning
 	// period ends.
+	//
+	// The German required fields are checked as in `POST /v1/documents`,
+	// for both key modes. A German domestic document gives `valid: false`
+	// and one entry in `errors` for each missing field: `path` is the
+	// field (for example `from.phone`), `code` is
+	// `de_domestic_fields_missing` and the message names the Peppol rule.
+	// A document to a `0204` receiver without `buyer_reference` gives
+	// `valid: false` and one entry with `path` `buyer_reference` and
+	// `code` `buyer_reference_required`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -13503,6 +13786,24 @@ func (c *ClientWithResponses) ListDocumentsWithResponse(ctx context.Context, par
 // `422` yet: for a warning period the document is accepted and goes
 // out with the country `BE`. After that period it gets the same `422`.
 //
+// A German domestic document has a seller and a buyer that are both in
+// Germany, by the country rule above. Peppol requires five fields on
+// it: `from.contact_name` (DE-R-005), `from.email` (DE-R-007),
+// `from.phone` (DE-R-006), `payment_means` (DE-R-001) and
+// `buyer_reference` (DE-R-015). The `invoice_contact` of the company
+// is filled in first, so it satisfies the three `from` fields. If a
+// field is missing, the response is a `422` with the code
+// `de_domestic_fields_missing`. `param` is the first missing field and
+// `details.missing` lists them all. Any other document to a `0204`
+// receiver (a German public body; `to.peppol_id`, or a `0204:…` in
+// `to.tax_id`) needs `buyer_reference`, which holds the Leitweg-ID. If
+// it is missing, the response is a `422` with the code
+// `buyer_reference_required` and `param` `buyer_reference`. Both key
+// modes get these checks. No credit is charged, no document is made.
+// Before, such a document got a `202`, failed at the Peppol network
+// and the credit came back about a minute later. A replay of an
+// idempotency key is not checked again.
+//
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
 //
@@ -13547,6 +13848,24 @@ func (c *ClientWithResponses) SendDocumentWithBodyWithResponse(ctx context.Conte
 // `422` yet: for a warning period the document is accepted and goes
 // out with the country `BE`. After that period it gets the same `422`.
 //
+// A German domestic document has a seller and a buyer that are both in
+// Germany, by the country rule above. Peppol requires five fields on
+// it: `from.contact_name` (DE-R-005), `from.email` (DE-R-007),
+// `from.phone` (DE-R-006), `payment_means` (DE-R-001) and
+// `buyer_reference` (DE-R-015). The `invoice_contact` of the company
+// is filled in first, so it satisfies the three `from` fields. If a
+// field is missing, the response is a `422` with the code
+// `de_domestic_fields_missing`. `param` is the first missing field and
+// `details.missing` lists them all. Any other document to a `0204`
+// receiver (a German public body; `to.peppol_id`, or a `0204:…` in
+// `to.tax_id`) needs `buyer_reference`, which holds the Leitweg-ID. If
+// it is missing, the response is a `422` with the code
+// `buyer_reference_required` and `param` `buyer_reference`. Both key
+// modes get these checks. No credit is charged, no document is made.
+// Before, such a document got a `202`, failed at the Peppol network
+// and the credit came back about a minute later. A replay of an
+// idempotency key is not checked again.
+//
 // To make a retry safe, send an `Idempotency-Key` header (or the
 // `idempotency_key` body field, which is the same key).
 //
@@ -13585,6 +13904,13 @@ func (c *ClientWithResponses) SendDocumentWithResponse(ctx context.Context, para
 // now, with a `ps_live_` key after the warning period. It does not
 // cost a credit.
 //
+// A German domestic item without a field that Peppol requires gets an
+// error object with the code `de_domestic_fields_missing` (with
+// `details.missing`) in the response array, and an item to a `0204`
+// receiver without `buyer_reference` gets one with the code
+// `buyer_reference_required`, as in `POST /v1/documents`. It does not
+// cost a credit. The other items go on.
+//
 // A `currency` that cannot be sent in one document refuses the whole
 // batch with a 422, before any charge.
 //
@@ -13622,6 +13948,13 @@ func (c *ClientWithResponses) SendDocumentBatchWithBodyWithResponse(ctx context.
 // response array, as in `POST /v1/documents`: with a `ps_test_` key
 // now, with a `ps_live_` key after the warning period. It does not
 // cost a credit.
+//
+// A German domestic item without a field that Peppol requires gets an
+// error object with the code `de_domestic_fields_missing` (with
+// `details.missing`) in the response array, and an item to a `0204`
+// receiver without `buyer_reference` gets one with the code
+// `buyer_reference_required`, as in `POST /v1/documents`. It does not
+// cost a credit. The other items go on.
 //
 // A `currency` that cannot be sent in one document refuses the whole
 // batch with a 422, before any charge.
@@ -14055,6 +14388,15 @@ func (c *ClientWithResponses) SignupWithResponse(ctx context.Context, body Signu
 // other checks and the same entry in `warnings`, until the warning
 // period ends.
 //
+// The German required fields are checked as in `POST /v1/documents`,
+// for both key modes. A German domestic document gives `valid: false`
+// and one entry in `errors` for each missing field: `path` is the
+// field (for example `from.phone`), `code` is
+// `de_domestic_fields_missing` and the message names the Peppol rule.
+// A document to a `0204` receiver without `buyer_reference` gives
+// `valid: false` and one entry with `path` `buyer_reference` and
+// `code` `buyer_reference_required`.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /v1/validate (the `ValidateDocument` operationId).
@@ -14102,6 +14444,15 @@ func (c *ClientWithResponses) ValidateDocumentWithBodyWithResponse(ctx context.C
 // `party_country_required`. A `ps_live_` key gets the result of the
 // other checks and the same entry in `warnings`, until the warning
 // period ends.
+//
+// The German required fields are checked as in `POST /v1/documents`,
+// for both key modes. A German domestic document gives `valid: false`
+// and one entry in `errors` for each missing field: `path` is the
+// field (for example `from.phone`), `code` is
+// `de_domestic_fields_missing` and the message names the Peppol rule.
+// A document to a `0204` receiver without `buyer_reference` gives
+// `valid: false` and one entry with `path` `buyer_reference` and
+// `code` `buyer_reference_required`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
