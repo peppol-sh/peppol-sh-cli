@@ -2019,7 +2019,6 @@ type DocumentStatus string
 // | provider_error | `provider_error` | Upstream provider returned an unexpected error. |
 // | provider_error | `provider_validation_failed` | Upstream provider rejected the payload (see `details`). |
 // | provider_error | `smp_error` | SMP or DNS lookup failed. |
-// | provider_error | `vat_check_unavailable` | 503 — `POST /v1/billing/checkout`: VIES is not available and there is no valid VIES result of the last 30 days. Try again later. |
 // | rate_limit_error | `rate_limit_exceeded` | Too many requests. Wait for the `Retry-After` time, then retry. |
 // | billing_error | `insufficient_credits` | Company does not have enough credits to send the document(s). Purchase more via `POST /v1/billing/checkout`. |
 // | billing_error | `sandbox_not_allowed` | Billing endpoints (e.g. `POST /v1/billing/checkout`) reject sandbox API keys. |
@@ -3045,7 +3044,6 @@ type IdempotencyKey = string
 // | provider_error | `provider_error` | Upstream provider returned an unexpected error. |
 // | provider_error | `provider_validation_failed` | Upstream provider rejected the payload (see `details`). |
 // | provider_error | `smp_error` | SMP or DNS lookup failed. |
-// | provider_error | `vat_check_unavailable` | 503 — `POST /v1/billing/checkout`: VIES is not available and there is no valid VIES result of the last 30 days. Try again later. |
 // | rate_limit_error | `rate_limit_exceeded` | Too many requests. Wait for the `Retry-After` time, then retry. |
 // | billing_error | `insufficient_credits` | Company does not have enough credits to send the document(s). Purchase more via `POST /v1/billing/checkout`. |
 // | billing_error | `sandbox_not_allowed` | Billing endpoints (e.g. `POST /v1/billing/checkout`) reject sandbox API keys. |
@@ -3132,7 +3130,6 @@ type BadRequest = ErrorObject
 // | provider_error | `provider_error` | Upstream provider returned an unexpected error. |
 // | provider_error | `provider_validation_failed` | Upstream provider rejected the payload (see `details`). |
 // | provider_error | `smp_error` | SMP or DNS lookup failed. |
-// | provider_error | `vat_check_unavailable` | 503 — `POST /v1/billing/checkout`: VIES is not available and there is no valid VIES result of the last 30 days. Try again later. |
 // | rate_limit_error | `rate_limit_exceeded` | Too many requests. Wait for the `Retry-After` time, then retry. |
 // | billing_error | `insufficient_credits` | Company does not have enough credits to send the document(s). Purchase more via `POST /v1/billing/checkout`. |
 // | billing_error | `sandbox_not_allowed` | Billing endpoints (e.g. `POST /v1/billing/checkout`) reject sandbox API keys. |
@@ -3219,7 +3216,6 @@ type Forbidden = ErrorObject
 // | provider_error | `provider_error` | Upstream provider returned an unexpected error. |
 // | provider_error | `provider_validation_failed` | Upstream provider rejected the payload (see `details`). |
 // | provider_error | `smp_error` | SMP or DNS lookup failed. |
-// | provider_error | `vat_check_unavailable` | 503 — `POST /v1/billing/checkout`: VIES is not available and there is no valid VIES result of the last 30 days. Try again later. |
 // | rate_limit_error | `rate_limit_exceeded` | Too many requests. Wait for the `Retry-After` time, then retry. |
 // | billing_error | `insufficient_credits` | Company does not have enough credits to send the document(s). Purchase more via `POST /v1/billing/checkout`. |
 // | billing_error | `sandbox_not_allowed` | Billing endpoints (e.g. `POST /v1/billing/checkout`) reject sandbox API keys. |
@@ -3306,7 +3302,6 @@ type NotFound = ErrorObject
 // | provider_error | `provider_error` | Upstream provider returned an unexpected error. |
 // | provider_error | `provider_validation_failed` | Upstream provider rejected the payload (see `details`). |
 // | provider_error | `smp_error` | SMP or DNS lookup failed. |
-// | provider_error | `vat_check_unavailable` | 503 — `POST /v1/billing/checkout`: VIES is not available and there is no valid VIES result of the last 30 days. Try again later. |
 // | rate_limit_error | `rate_limit_exceeded` | Too many requests. Wait for the `Retry-After` time, then retry. |
 // | billing_error | `insufficient_credits` | Company does not have enough credits to send the document(s). Purchase more via `POST /v1/billing/checkout`. |
 // | billing_error | `sandbox_not_allowed` | Billing endpoints (e.g. `POST /v1/billing/checkout`) reject sandbox API keys. |
@@ -3393,7 +3388,6 @@ type PaymentRequired = ErrorObject
 // | provider_error | `provider_error` | Upstream provider returned an unexpected error. |
 // | provider_error | `provider_validation_failed` | Upstream provider rejected the payload (see `details`). |
 // | provider_error | `smp_error` | SMP or DNS lookup failed. |
-// | provider_error | `vat_check_unavailable` | 503 — `POST /v1/billing/checkout`: VIES is not available and there is no valid VIES result of the last 30 days. Try again later. |
 // | rate_limit_error | `rate_limit_exceeded` | Too many requests. Wait for the `Retry-After` time, then retry. |
 // | billing_error | `insufficient_credits` | Company does not have enough credits to send the document(s). Purchase more via `POST /v1/billing/checkout`. |
 // | billing_error | `sandbox_not_allowed` | Billing endpoints (e.g. `POST /v1/billing/checkout`) reject sandbox API keys. |
@@ -3480,7 +3474,6 @@ type RateLimited = ErrorObject
 // | provider_error | `provider_error` | Upstream provider returned an unexpected error. |
 // | provider_error | `provider_validation_failed` | Upstream provider rejected the payload (see `details`). |
 // | provider_error | `smp_error` | SMP or DNS lookup failed. |
-// | provider_error | `vat_check_unavailable` | 503 — `POST /v1/billing/checkout`: VIES is not available and there is no valid VIES result of the last 30 days. Try again later. |
 // | rate_limit_error | `rate_limit_exceeded` | Too many requests. Wait for the `Retry-After` time, then retry. |
 // | billing_error | `insufficient_credits` | Company does not have enough credits to send the document(s). Purchase more via `POST /v1/billing/checkout`. |
 // | billing_error | `sandbox_not_allowed` | Billing endpoints (e.g. `POST /v1/billing/checkout`) reject sandbox API keys. |
@@ -3567,7 +3560,6 @@ type Unauthenticated = ErrorObject
 // | provider_error | `provider_error` | Upstream provider returned an unexpected error. |
 // | provider_error | `provider_validation_failed` | Upstream provider rejected the payload (see `details`). |
 // | provider_error | `smp_error` | SMP or DNS lookup failed. |
-// | provider_error | `vat_check_unavailable` | 503 — `POST /v1/billing/checkout`: VIES is not available and there is no valid VIES result of the last 30 days. Try again later. |
 // | rate_limit_error | `rate_limit_exceeded` | Too many requests. Wait for the `Retry-After` time, then retry. |
 // | billing_error | `insufficient_credits` | Company does not have enough credits to send the document(s). Purchase more via `POST /v1/billing/checkout`. |
 // | billing_error | `sandbox_not_allowed` | Billing endpoints (e.g. `POST /v1/billing/checkout`) reject sandbox API keys. |
